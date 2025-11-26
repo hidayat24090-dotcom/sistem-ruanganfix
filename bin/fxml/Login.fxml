@@ -42,6 +42,14 @@
                </font>
             </Button>
             
+            <Separator />
+            
+            <Button fx:id="userLoginButton" maxWidth="1.7976931348623157E308" onAction="#handleUserLogin" styleClass="secondary-button" text="← Kembali ke Login User">
+               <font>
+                  <Font size="12.0" />
+               </font>
+            </Button>
+            
             <Label text="Default: admin / admin123" styleClass="info-label">
                <font>
                   <Font size="11.0" />
