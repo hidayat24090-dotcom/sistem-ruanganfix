@@ -24,19 +24,21 @@ javac --module-path "%JAVAFX_PATH%" ^
       --add-modules javafx.controls,javafx.fxml ^
       -cp "lib\*;src;resources" ^
       -d bin ^
-      -verbose ^
       src\com\sistemruangan\util\DatabaseConnection.java ^
       src\com\sistemruangan\util\SessionManager.java ^
       src\com\sistemruangan\model\Ruangan.java ^
       src\com\sistemruangan\model\Peminjaman.java ^
       src\com\sistemruangan\model\User.java ^
+      src\com\sistemruangan\model\StatistikRuangan.java ^
       src\com\sistemruangan\controller\RuanganController.java ^
       src\com\sistemruangan\controller\PeminjamanController.java ^
       src\com\sistemruangan\controller\UserController.java ^
+      src\com\sistemruangan\controller\LaporanController.java ^
       src\com\sistemruangan\view\LoginController.java ^
       src\com\sistemruangan\view\DashboardController.java ^
       src\com\sistemruangan\view\DaftarRuanganController.java ^
       src\com\sistemruangan\view\DataPeminjamanController.java ^
+      src\com\sistemruangan\view\LaporanTransaksiController.java ^
       src\com\sistemruangan\view\UserLoginController.java ^
       src\com\sistemruangan\view\UserRegisterController.java ^
       src\com\sistemruangan\view\UserDashboardController.java ^
@@ -46,6 +48,7 @@ javac --module-path "%JAVAFX_PATH%" ^
       src\com\sistemruangan\view\UserProfileController.java ^
       src\com\sistemruangan\view\JadwalBulananController.java ^
       src\com\sistemruangan\MainApp.java
+
 
 if errorlevel 1 (
     echo.

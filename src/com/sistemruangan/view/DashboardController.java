@@ -9,18 +9,20 @@ import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 /**
- * Controller untuk halaman Dashboard
+ * Controller untuk halaman Dashboard - UPDATED with Laporan Menu
  */
 public class DashboardController {
     
     @FXML private Button btnRuangan;
     @FXML private Button btnPeminjaman;
+    @FXML private Button btnLaporan; // NEW
     @FXML private Button btnLogout;
     
     @FXML
     public void initialize() {
         setupButtonEffects(btnRuangan);
         setupButtonEffects(btnPeminjaman);
+        setupButtonEffects(btnLaporan); // NEW
         setupButtonEffects(btnLogout);
     }
     
@@ -32,7 +34,7 @@ public class DashboardController {
         shadow.setColor(Color.web("#5B9BD5"));
         shadow.setRadius(10);
         
-        button.setOnMouseEntered(_ -> {
+        button.setOnMouseEntered(e -> {
             button.setEffect(shadow);
             FadeTransition ft = new FadeTransition(Duration.millis(200), button);
             ft.setFromValue(1.0);
@@ -40,7 +42,7 @@ public class DashboardController {
             ft.play();
         });
         
-        button.setOnMouseExited(_ -> {
+        button.setOnMouseExited(e -> {
             button.setEffect(null);
             FadeTransition ft = new FadeTransition(Duration.millis(200), button);
             ft.setFromValue(0.8);
@@ -57,6 +59,11 @@ public class DashboardController {
     @FXML
     private void handleDataPeminjaman() {
         MainApp.showPeminjamanScene();
+    }
+    
+    @FXML
+    private void handleLaporan() {
+        MainApp.showLaporanTransaksi();
     }
     
     @FXML

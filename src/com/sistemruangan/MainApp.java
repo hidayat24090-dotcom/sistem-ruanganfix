@@ -162,6 +162,9 @@ public class MainApp extends Application {
     public static void showPeminjamanScene() {
         loadContent("/fxml/DataPeminjaman.fxml", "Data Peminjaman");
     }
+    public static void showLaporanTransaksi() {
+        loadContent("/fxml/LaporanTransaksi.fxml", "Laporan Transaksi");
+    }
     
     // ========== USER SCENES ==========
     
