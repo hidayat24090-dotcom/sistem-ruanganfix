@@ -2,27 +2,18 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<AnchorPane prefHeight="700.0" prefWidth="1100.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sistemruangan.view.DaftarRuanganController">
+<AnchorPane prefHeight="700.0" prefWidth="1200.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sistemruangan.view.DaftarRuanganController">
    <children>
       <VBox spacing="15.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0">
          <children>
-            <!-- HEADER WITH BACK BUTTON -->
+            <!-- HEADER -->
             <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: #f8f9fa; -fx-padding: 15; -fx-background-radius: 8;">
                <children>
-                  <Button fx:id="btnKembali" mnemonicParsing="false" onAction="#handleKembali" text="◄ Kembali">
-                     <style>
-                        -fx-background-color: #6c757d;
-                        -fx-text-fill: white;
-                        -fx-font-size: 13px;
-                        -fx-font-weight: bold;
-                        -fx-padding: 8 20;
-                        -fx-cursor: hand;
-                        -fx-background-radius: 6px;
-                     </style>
-                  </Button>
+                  <Button fx:id="btnKembali" mnemonicParsing="false" onAction="#handleKembali" text="◄ Kembali" styleClass="secondary-button" />
                   
                   <Label text="📋 Daftar Ruangan">
                      <font>
@@ -37,7 +28,7 @@
             <HBox spacing="20.0">
                <children>
                   <!-- Form Input -->
-                  <VBox spacing="12.0" style="-fx-background-color: #f8f9fa; -fx-padding: 20; -fx-background-radius: 8; -fx-pref-width: 280; -fx-min-width: 280;" HBox.hgrow="NEVER">
+                  <VBox spacing="12.0" style="-fx-background-color: #f8f9fa; -fx-padding: 20; -fx-background-radius: 8; -fx-pref-width: 320; -fx-min-width: 320;" HBox.hgrow="NEVER">
                      <children>
                         <Label text="Form Ruangan">
                            <font>
@@ -45,24 +36,49 @@
                            </font>
                         </Label>
                         
+                        <!-- Image Preview -->
+                        <VBox alignment="CENTER" spacing="10.0" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8;">
+                           <children>
+                              <Label text="Foto Ruangan">
+                                 <font>
+                                    <Font name="System Bold" size="12.0" />
+                                 </font>
+                              </Label>
+                              
+                              <ImageView fx:id="imgPreview" fitHeight="180.0" fitWidth="280.0" pickOnBounds="true" preserveRatio="true" style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);">
+                                 <image>
+                                    <Image url="@../images/default_room.png" />
+                                 </image>
+                              </ImageView>
+                              
+                              <Label fx:id="lblFotoName" text="" textFill="#7f8c8d">
+                                 <font>
+                                    <Font size="10.0" />
+                                 </font>
+                              </Label>
+                              
+                              <Button fx:id="btnUploadFoto" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleUploadFoto" styleClass="primary-button" text="📷 Upload Foto" />
+                           </children>
+                        </VBox>
+                        
                         <VBox spacing="5.0">
                            <children>
                               <Label text="Nama Ruangan:" />
-                              <TextField fx:id="txtNama" promptText="Nama ruangan" />
+                              <TextField fx:id="txtNama" promptText="Nama ruangan" styleClass="text-field" />
                            </children>
                         </VBox>
                         
                         <VBox spacing="5.0">
                            <children>
                               <Label text="Jumlah Kursi:" />
-                              <TextField fx:id="txtKursi" promptText="Jumlah kursi" />
+                              <TextField fx:id="txtKursi" promptText="Jumlah kursi" styleClass="text-field" />
                            </children>
                         </VBox>
                         
                         <VBox spacing="5.0">
                            <children>
                               <Label text="Fasilitas:" />
-                              <TextArea fx:id="txtFasilitas" prefHeight="80.0" promptText="Contoh: Proyektor, HDMI (baik), AC, Whiteboard" wrapText="true" />
+                              <TextArea fx:id="txtFasilitas" prefHeight="80.0" promptText="Contoh: Proyektor, HDMI (baik), AC, Whiteboard" styleClass="text-field" wrapText="true" />
                               <Label text="*Pisahkan dengan koma" style="-fx-text-fill: #6c757d;">
                                  <font>
                                     <Font size="10.0" />
@@ -74,7 +90,7 @@
                         <VBox spacing="5.0">
                            <children>
                               <Label text="Status:" />
-                              <ComboBox fx:id="cbStatus" maxWidth="1.7976931348623157E308" promptText="Pilih status" />
+                              <ComboBox fx:id="cbStatus" maxWidth="1.7976931348623157E308" promptText="Pilih status" styleClass="combo-box" />
                            </children>
                         </VBox>
                         
@@ -96,12 +112,12 @@
                      <children>
                         <HBox alignment="CENTER_LEFT" spacing="10.0">
                            <children>
-                              <TextField fx:id="txtSearch" onKeyReleased="#handleSearch" promptText="🔍 Cari ruangan..." HBox.hgrow="ALWAYS" />
+                              <TextField fx:id="txtSearch" onKeyReleased="#handleSearch" promptText="🔍 Cari ruangan..." styleClass="text-field" HBox.hgrow="ALWAYS" />
                               <Button fx:id="btnRefresh" mnemonicParsing="false" onAction="#handleRefresh" styleClass="secondary-button" text="🔄 Refresh" />
                            </children>
                         </HBox>
                         
-                        <TableView fx:id="tableRuangan" style="-fx-background-color: white;" VBox.vgrow="ALWAYS">
+                        <TableView fx:id="tableRuangan" styleClass="table-view" VBox.vgrow="ALWAYS">
                            <columns>
                               <TableColumn fx:id="colId" prefWidth="50.0" text="ID" />
                               <TableColumn fx:id="colNama" prefWidth="200.0" text="Nama Ruangan" />

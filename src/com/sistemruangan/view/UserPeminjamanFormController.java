@@ -6,6 +6,7 @@ import com.sistemruangan.controller.RuanganController;
 import com.sistemruangan.model.Peminjaman;
 import com.sistemruangan.model.Ruangan;
 import com.sistemruangan.util.SessionManager;
+import com.sistemruangan.view.BuktiPeminjamanDialog;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -321,14 +322,22 @@ public class UserPeminjamanFormController {
      */
     private void showSuccess() {
         try {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Berhasil");
-            alert.setHeaderText("Pengajuan Peminjaman Berhasil!");
-            alert.setContentText("Peminjaman ruangan Anda telah berhasil diajukan. " +
-                               "Anda dapat melihat riwayat peminjaman di menu Riwayat Peminjaman.");
-            alert.showAndWait();
+            // Show bukti peminjaman
+            Peminjaman completePeminjaman = new Peminjaman(
+                0, // ID akan di-generate database
+                cbRuangan.getValue().getId(),
+                cbRuangan.getValue().getNamaRuangan(),
+                SessionManager.getNamaLengkap(),
+                txtKeperluan.getText().trim(),
+                dpTglPinjam.getValue(),
+                dpTglKembali.getValue(),
+                "aktif"
+            );
             
-            System.out.println("✅ Success dialog shown, navigating to dashboard...");
+            // Panggil BuktiPeminjamanDialog (sudah di package view)
+            BuktiPeminjamanDialog.showBuktiPeminjaman(completePeminjaman);
+            
+            System.out.println("✅ Bukti peminjaman shown, navigating to dashboard...");
             
             // Kembali ke dashboard
             MainApp.showUserDashboard();
@@ -336,6 +345,14 @@ public class UserPeminjamanFormController {
         } catch (Exception e) {
             System.err.println("❌ ERROR in showSuccess(): " + e.getMessage());
             e.printStackTrace();
+            
+            // Fallback to simple success dialog
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Berhasil");
+            alert.setHeaderText("Pengajuan Peminjaman Berhasil!");
+            alert.setContentText("Peminjaman ruangan Anda telah berhasil diajukan.");
+            alert.showAndWait();
+            MainApp.showUserDashboard();
         }
     }
     

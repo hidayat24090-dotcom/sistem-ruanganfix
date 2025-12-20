@@ -8,10 +8,20 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 /**
- * Controller untuk halaman Daftar Ruangan - FIXED VERSION
+ * Controller untuk halaman Daftar Ruangan - WITH PHOTO UPLOAD
  */
 public class DaftarRuanganController {
     
@@ -28,6 +38,10 @@ public class DaftarRuanganController {
     @FXML private ComboBox<String> cbStatus;
     @FXML private TextField txtSearch;
     
+    @FXML private ImageView imgPreview;
+    @FXML private Button btnUploadFoto;
+    @FXML private Label lblFotoName;
+    
     @FXML private Button btnTambah;
     @FXML private Button btnUpdate;
     @FXML private Button btnHapus;
@@ -37,13 +51,20 @@ public class DaftarRuanganController {
     
     private RuanganController ruanganController;
     private Ruangan selectedRuangan;
+    private String selectedFotoPath = null;
+    
+    // Folder untuk menyimpan foto
+    private static final String FOTO_DIR = "resources/images/ruangan/";
     
     @FXML
     public void initialize() {
-        System.out.println("🔧 Initializing DaftarRuanganController...");
+        System.out.println("🔧 Initializing DaftarRuanganController with Photo Upload...");
         
         try {
             ruanganController = new RuanganController();
+            
+            // Create foto directory if not exists
+            createFotoDirectory();
             
             // Setup table columns
             colId.setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -52,7 +73,6 @@ public class DaftarRuanganController {
             colFasilitas.setCellValueFactory(new PropertyValueFactory<>("fasilitas"));
             colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
             
-            // Left align for nama column
             colNama.setStyle("-fx-alignment: CENTER-LEFT;");
             colFasilitas.setStyle("-fx-alignment: CENTER-LEFT;");
             
@@ -60,8 +80,10 @@ public class DaftarRuanganController {
             cbStatus.getItems().addAll("tersedia", "dipinjam");
             cbStatus.setValue("tersedia");
             
+            // Setup default image
+            setDefaultImage();
+            
             // Load data
-            System.out.println("📊 Loading data...");
             loadData();
             
             // Setup table selection
@@ -75,6 +97,7 @@ public class DaftarRuanganController {
             );
             
             // Setup button effects
+            setupButtonEffect(btnUploadFoto);
             setupButtonEffect(btnTambah);
             setupButtonEffect(btnUpdate);
             setupButtonEffect(btnHapus);
@@ -89,6 +112,89 @@ public class DaftarRuanganController {
             e.printStackTrace();
             showError("Gagal menginisialisasi halaman: " + e.getMessage());
         }
+    }
+    
+    /**
+     * Create directory untuk menyimpan foto
+     */
+    private void createFotoDirectory() {
+        try {
+            Path path = Paths.get(FOTO_DIR);
+            if (!Files.exists(path)) {
+                Files.createDirectories(path);
+                System.out.println("📁 Created foto directory: " + FOTO_DIR);
+            }
+        } catch (IOException e) {
+            System.err.println("❌ Failed to create foto directory: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Set default image
+     */
+    private void setDefaultImage() {
+        try {
+            Image defaultImage = new Image(getClass().getResourceAsStream("/images/default_room.png"));
+            imgPreview.setImage(defaultImage);
+        } catch (Exception e) {
+            System.out.println("⚠️ Default image not found, using placeholder");
+        }
+    }
+    
+    /**
+     * Handle upload foto
+     */
+    @FXML
+    private void handleUploadFoto() {
+        try {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Pilih Foto Ruangan");
+            fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
+            );
+            
+            File selectedFile = fileChooser.showOpenDialog(btnUploadFoto.getScene().getWindow());
+            
+            if (selectedFile != null) {
+                // Generate unique filename
+                String timestamp = String.valueOf(System.currentTimeMillis());
+                String extension = getFileExtension(selectedFile.getName());
+                String newFileName = "room_" + timestamp + extension;
+                
+                // Copy file to resources/images/ruangan/
+                Path sourcePath = selectedFile.toPath();
+                Path destinationPath = Paths.get(FOTO_DIR + newFileName);
+                
+                Files.copy(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
+                
+                selectedFotoPath = newFileName;
+                
+                // Preview image
+                Image image = new Image(selectedFile.toURI().toString());
+                imgPreview.setImage(image);
+                
+                lblFotoName.setText(selectedFile.getName());
+                
+                System.out.println("✅ Foto uploaded: " + newFileName);
+                showInfo("Foto berhasil dipilih!");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ ERROR uploading foto: " + e.getMessage());
+            e.printStackTrace();
+            showError("Gagal upload foto: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get file extension
+     */
+    private String getFileExtension(String filename) {
+        int lastIndexOf = filename.lastIndexOf(".");
+        if (lastIndexOf == -1) {
+            return "";
+        }
+        return filename.substring(lastIndexOf);
     }
     
     /**
@@ -117,8 +223,7 @@ public class DaftarRuanganController {
         } catch (Exception e) {
             System.err.println("❌ ERROR loading data: " + e.getMessage());
             e.printStackTrace();
-            showError("Gagal memuat data ruangan:\n" + e.getMessage() + 
-                     "\n\nPastikan database sudah running dan tabel 'ruangan' sudah ada.");
+            showError("Gagal memuat data ruangan:\n" + e.getMessage());
         }
     }
     
@@ -131,6 +236,29 @@ public class DaftarRuanganController {
             txtKursi.setText(String.valueOf(ruangan.getJumlahKursi()));
             txtFasilitas.setText(ruangan.getFasilitas());
             cbStatus.setValue(ruangan.getStatus());
+            
+            // Load foto jika ada
+            if (ruangan.getFotoPath() != null && !ruangan.getFotoPath().isEmpty()) {
+                try {
+                    File fotoFile = new File(FOTO_DIR + ruangan.getFotoPath());
+                    if (fotoFile.exists()) {
+                        Image image = new Image(fotoFile.toURI().toString());
+                        imgPreview.setImage(image);
+                        lblFotoName.setText(ruangan.getFotoPath());
+                        selectedFotoPath = ruangan.getFotoPath();
+                    } else {
+                        setDefaultImage();
+                        lblFotoName.setText("Foto tidak ditemukan");
+                    }
+                } catch (Exception e) {
+                    setDefaultImage();
+                    System.err.println("⚠️ Error loading foto: " + e.getMessage());
+                }
+            } else {
+                setDefaultImage();
+                lblFotoName.setText("Tidak ada foto");
+            }
+            
             System.out.println("✅ Fields populated for: " + ruangan.getNamaRuangan());
         } catch (Exception e) {
             System.err.println("❌ ERROR populating fields: " + e.getMessage());
@@ -147,6 +275,9 @@ public class DaftarRuanganController {
         txtFasilitas.clear();
         cbStatus.setValue("tersedia");
         selectedRuangan = null;
+        selectedFotoPath = null;
+        setDefaultImage();
+        lblFotoName.setText("");
         tableRuangan.getSelectionModel().clearSelection();
         System.out.println("🔄 Fields cleared");
     }
@@ -166,6 +297,7 @@ public class DaftarRuanganController {
             ruangan.setJumlahKursi(Integer.parseInt(txtKursi.getText().trim()));
             ruangan.setFasilitas(txtFasilitas.getText().trim());
             ruangan.setStatus(cbStatus.getValue());
+            ruangan.setFotoPath(selectedFotoPath); // Set foto path
             
             if (ruanganController.tambahRuangan(ruangan)) {
                 showSuccess("Ruangan berhasil ditambahkan!");
@@ -198,6 +330,7 @@ public class DaftarRuanganController {
             selectedRuangan.setJumlahKursi(Integer.parseInt(txtKursi.getText().trim()));
             selectedRuangan.setFasilitas(txtFasilitas.getText().trim());
             selectedRuangan.setStatus(cbStatus.getValue());
+            selectedRuangan.setFotoPath(selectedFotoPath); // Update foto path
             
             if (ruanganController.updateRuangan(selectedRuangan)) {
                 showSuccess("Ruangan berhasil diupdate!");
@@ -229,6 +362,15 @@ public class DaftarRuanganController {
                                        selectedRuangan.getNamaRuangan() + "?");
             
             if (confirmAlert.showAndWait().get() == ButtonType.OK) {
+                // Delete foto file if exists
+                if (selectedRuangan.getFotoPath() != null) {
+                    try {
+                        Files.deleteIfExists(Paths.get(FOTO_DIR + selectedRuangan.getFotoPath()));
+                    } catch (IOException e) {
+                        System.err.println("⚠️ Failed to delete foto file: " + e.getMessage());
+                    }
+                }
+                
                 if (ruanganController.deleteRuangan(selectedRuangan.getId())) {
                     showSuccess("Ruangan berhasil dihapus!");
                     loadData();
@@ -297,9 +439,6 @@ public class DaftarRuanganController {
         }
     }
     
-    /**
-     * Validasi input form
-     */
     private boolean validateInput() {
         if (txtNama.getText().trim().isEmpty()) {
             showWarning("Nama ruangan tidak boleh kosong!");
@@ -320,9 +459,6 @@ public class DaftarRuanganController {
         return true;
     }
     
-    /**
-     * Show alert dialogs
-     */
     private void showSuccess(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Sukses");
@@ -355,9 +491,6 @@ public class DaftarRuanganController {
         alert.showAndWait();
     }
     
-    /**
-     * Setup button hover effect
-     */
     private void setupButtonEffect(Button button) {
         try {
             DropShadow shadow = new DropShadow();

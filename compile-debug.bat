@@ -1,6 +1,7 @@
 @echo off
 echo ========================================
 echo   COMPILE DEBUG - Sistem Ruangan
+echo   WITH IMAGE RESOURCES SUPPORT
 echo ========================================
 echo.
 
@@ -13,11 +14,11 @@ cd "%PROJECT_PATH%"
 REM Create bin folder
 if not exist "bin" mkdir bin
 
-echo [1/4] Cleaning old files...
+echo [1/5] Cleaning old files...
 if exist "bin\com" rmdir /s /q bin\com
 mkdir bin\com
 
-echo [2/4] Compiling Java files with verbose...
+echo [2/5] Compiling Java files with verbose...
 echo.
 
 javac --module-path "%JAVAFX_PATH%" ^
@@ -34,6 +35,7 @@ javac --module-path "%JAVAFX_PATH%" ^
       src\com\sistemruangan\controller\PeminjamanController.java ^
       src\com\sistemruangan\controller\UserController.java ^
       src\com\sistemruangan\controller\LaporanController.java ^
+      src\com\sistemruangan\view\BuktiPeminjamanDialog.java ^
       src\com\sistemruangan\view\LoginController.java ^
       src\com\sistemruangan\view\DashboardController.java ^
       src\com\sistemruangan\view\DaftarRuanganController.java ^
@@ -62,7 +64,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [3/4] Copying resources to bin...
+echo [3/5] Copying FXML resources to bin...
 
 REM Copy FXML files
 echo    - Copying FXML files...
@@ -75,6 +77,9 @@ if exist "bin\fxml\UserLogin.fxml" (
     echo      ❌ FXML files NOT copied - CHECK resources\fxml\ folder!
 )
 
+echo.
+echo [4/5] Copying CSS and IMAGE resources to bin...
+
 REM Copy CSS files
 echo    - Copying CSS files...
 if not exist "bin\css" mkdir bin\css
@@ -86,13 +91,35 @@ if exist "bin\css\style.css" (
     echo      ❌ CSS files NOT copied - CHECK resources\css\ folder!
 )
 
+REM Copy Images folder (NEW)
+echo    - Copying image resources...
+if not exist "bin\images" mkdir bin\images
+if not exist "bin\images\ruangan" mkdir bin\images\ruangan
+
+if exist "resources\images" (
+    xcopy /y /q /s resources\images bin\images\ >nul 2>&1
+    echo      ✅ Image resources copied
+) else (
+    echo      ⚠️ Image folder not found - Creating default structure...
+    mkdir resources\images
+    mkdir resources\images\ruangan
+    echo      📁 Created: resources\images\ruangan\
+    echo      ⚠️ Please add default_room.png to resources\images\
+)
+
 echo.
-echo [4/4] Verifying compiled files...
+echo [5/5] Verifying compiled files...
 
 if exist "bin\com\sistemruangan\MainApp.class" (
     echo    ✅ MainApp.class found
 ) else (
     echo    ❌ MainApp.class NOT found!
+)
+
+if exist "bin\com\sistemruangan\view\BuktiPeminjamanDialog.class" (
+    echo    ✅ BuktiPeminjamanDialog.class found (in view package)
+) else (
+    echo    ❌ BuktiPeminjamanDialog.class NOT found!
 )
 
 if exist "bin\com\sistemruangan\util\DatabaseConnection.class" (
@@ -113,12 +140,32 @@ if exist "bin\css\style.css" (
     echo    ❌ style.css NOT found in bin!
 )
 
+if exist "bin\images" (
+    echo    ✅ images folder found in bin
+) else (
+    echo    ⚠️ images folder not found in bin
+)
+
 echo.
 echo ========================================
 echo [SUCCESS] Compilation completed!
 echo ========================================
 echo.
-echo Next: Run test-db.bat to test database
-echo Then: Run run.bat to start application
+echo ✅ New Features Added:
+echo    - Foto Ruangan Upload (Admin)
+echo    - Beautiful Card View (User)
+echo    - Bukti Peminjaman (Receipt/Kwitansi)
+echo.
+echo 📦 Package Structure:
+echo    - BuktiPeminjamanDialog: com.sistemruangan.view
+echo    - Controllers: com.sistemruangan.controller
+echo    - Models: com.sistemruangan.model
+echo    - Utils: com.sistemruangan.util
+echo.
+echo Next Steps:
+echo 1. Run update-schema.sql to add foto_path column
+echo 2. Add default_room.png to resources\images\
+echo 3. Run test-db.bat to test database
+echo 4. Run run.bat to start application
 echo.
 pause
