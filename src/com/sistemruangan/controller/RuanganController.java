@@ -8,7 +8,7 @@ import javafx.collections.ObservableList;
 import java.sql.*;
 
 /**
- * Controller untuk operasi CRUD Ruangan
+ * Controller untuk operasi CRUD Ruangan - UPDATED with Fasilitas
  */
 public class RuanganController {
     
@@ -28,14 +28,13 @@ public class RuanganController {
                     rs.getInt("id"),
                     rs.getString("nama_ruangan"),
                     rs.getInt("jumlah_kursi"),
-                    rs.getBoolean("ada_proyektor"),
-                    rs.getString("kondisi_hdmi"),
+                    rs.getString("fasilitas"),  // NEW: fasilitas as string
                     rs.getString("status")
                 );
                 ruanganList.add(ruangan);
             }
         } catch (SQLException e) {
-            System.err.println(new StringBuilder("Error mengambil data ruangan: ").append(e.getMessage()).toString());
+            System.err.println("Error mengambil data ruangan: " + e.getMessage());
             e.printStackTrace();
         }
         
@@ -46,22 +45,21 @@ public class RuanganController {
      * Menambah ruangan baru ke database
      */
     public boolean tambahRuangan(Ruangan ruangan) {
-        String query = "INSERT INTO ruangan (nama_ruangan, jumlah_kursi, ada_proyektor, kondisi_hdmi, status) VALUES (?, ?, ?, ?, ?)";
+        String query = "INSERT INTO ruangan (nama_ruangan, jumlah_kursi, fasilitas, status) VALUES (?, ?, ?, ?)";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
             pstmt.setString(1, ruangan.getNamaRuangan());
             pstmt.setInt(2, ruangan.getJumlahKursi());
-            pstmt.setBoolean(3, ruangan.isAdaProyektor());
-            pstmt.setString(4, ruangan.getKondisiHdmi());
-            pstmt.setString(5, ruangan.getStatus());
+            pstmt.setString(3, ruangan.getFasilitas());
+            pstmt.setString(4, ruangan.getStatus());
             
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
             
         } catch (SQLException e) {
-            System.err.println(new StringBuilder("Error menambah ruangan: ").append(e.getMessage()).toString());
+            System.err.println("Error menambah ruangan: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -71,23 +69,22 @@ public class RuanganController {
      * Mengupdate data ruangan
      */
     public boolean updateRuangan(Ruangan ruangan) {
-        String query = "UPDATE ruangan SET nama_ruangan=?, jumlah_kursi=?, ada_proyektor=?, kondisi_hdmi=?, status=? WHERE id=?";
+        String query = "UPDATE ruangan SET nama_ruangan=?, jumlah_kursi=?, fasilitas=?, status=? WHERE id=?";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
             pstmt.setString(1, ruangan.getNamaRuangan());
             pstmt.setInt(2, ruangan.getJumlahKursi());
-            pstmt.setBoolean(3, ruangan.isAdaProyektor());
-            pstmt.setString(4, ruangan.getKondisiHdmi());
-            pstmt.setString(5, ruangan.getStatus());
-            pstmt.setInt(6, ruangan.getId());
+            pstmt.setString(3, ruangan.getFasilitas());
+            pstmt.setString(4, ruangan.getStatus());
+            pstmt.setInt(5, ruangan.getId());
             
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
             
         } catch (SQLException e) {
-            System.err.println(new StringBuilder("Error update ruangan: ").append(e.getMessage()).toString());
+            System.err.println("Error update ruangan: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -107,7 +104,7 @@ public class RuanganController {
             return rowsAffected > 0;
             
         } catch (SQLException e) {
-            System.err.println(new StringBuilder("Error hapus ruangan: ").append(e.getMessage()).toString());
+            System.err.println("Error hapus ruangan: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -129,7 +126,7 @@ public class RuanganController {
             return rowsAffected > 0;
             
         } catch (SQLException e) {
-            System.err.println(new StringBuilder("Error update status ruangan: ").append(e.getMessage()).toString());
+            System.err.println("Error update status ruangan: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -152,13 +149,12 @@ public class RuanganController {
                     rs.getInt("id"),
                     rs.getString("nama_ruangan"),
                     rs.getInt("jumlah_kursi"),
-                    rs.getBoolean("ada_proyektor"),
-                    rs.getString("kondisi_hdmi"),
+                    rs.getString("fasilitas"),
                     rs.getString("status")
                 );
             }
         } catch (SQLException e) {
-            System.err.println(new StringBuilder("Error mendapatkan ruangan: ").append(e.getMessage()).toString());
+            System.err.println("Error mendapatkan ruangan: " + e.getMessage());
             e.printStackTrace();
         }
         
@@ -183,14 +179,13 @@ public class RuanganController {
                     rs.getInt("id"),
                     rs.getString("nama_ruangan"),
                     rs.getInt("jumlah_kursi"),
-                    rs.getBoolean("ada_proyektor"),
-                    rs.getString("kondisi_hdmi"),
+                    rs.getString("fasilitas"),
                     rs.getString("status")
                 );
                 ruanganList.add(ruangan);
             }
         } catch (SQLException e) {
-            System.err.println(new StringBuilder("Error mencari ruangan: ").append(e.getMessage()).toString());
+            System.err.println("Error mencari ruangan: " + e.getMessage());
             e.printStackTrace();
         }
         

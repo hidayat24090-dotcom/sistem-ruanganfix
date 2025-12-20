@@ -327,6 +327,7 @@
     padding: 10px 5px;
 }
 
+/* TABLE CELL ALIGNMENT - CENTER BY DEFAULT */
 .table-view .table-cell {
     -fx-padding: 8px 5px;
     padding: 8px 5px;
@@ -334,6 +335,14 @@
     border-color: transparent;
     -fx-font-size: 12px;
     font-size: 12px;
+    -fx-alignment: CENTER;
+    text-alignment: center;
+}
+
+/* LEFT ALIGNMENT FOR NAME COLUMNS */
+.table-cell-left {
+    -fx-alignment: CENTER-LEFT;
+    text-alignment: left;
 }
 
 .table-row-cell {

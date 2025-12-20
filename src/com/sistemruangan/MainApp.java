@@ -7,15 +7,19 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import com.sistemruangan.util.DatabaseConnection;
 
 /**
- * Main Application Class with Fixed Fullscreen Support
+ * Main Application Class - SINGLE SCENE (Zero Flicker!)
+ * Revolutionary approach: Satu Scene, ganti Content saja!
  */
 public class MainApp extends Application {
     
     private static Stage primaryStage;
+    private static StackPane rootContainer;
+    private static Scene mainScene;
     private static boolean isFullscreen = false;
     
     @Override
@@ -26,7 +30,7 @@ public class MainApp extends Application {
             System.out.println("========================================");
             
             // Test koneksi database
-            System.out.println("\n[1/3] Testing database connection...");
+            System.out.println("\n[1/4] Testing database connection...");
             if (!DatabaseConnection.testConnection()) {
                 showErrorDialog("Database Error", 
                     "Gagal koneksi ke database!\n\n" +
@@ -40,16 +44,33 @@ public class MainApp extends Application {
             
             primaryStage = stage;
             
-            // Disable fullscreen exit hint (THIS IS KEY!)
-            primaryStage.setFullScreenExitHint("");
+            // [REVOLUTIONARY CHANGE] Buat SATU SCENE saja untuk semua halaman!
+            System.out.println("\n[2/4] Creating main scene container...");
+            rootContainer = new StackPane();
+            rootContainer.setStyle("-fx-background-color: transparent;");
             
-            // Load User Login Scene
-            System.out.println("\n[2/3] Loading User Login scene...");
-            showUserLogin();
+            // Get screen size for adaptive layout
+            javafx.stage.Screen screen = javafx.stage.Screen.getPrimary();
+            double screenWidth = screen.getBounds().getWidth();
+            double screenHeight = screen.getBounds().getHeight();
             
+            mainScene = new Scene(rootContainer, screenWidth, screenHeight);
+            
+            // Load CSS
+            String cssPath = "/css/style.css";
+            if (MainApp.class.getResource(cssPath) != null) {
+                mainScene.getStylesheets().add(MainApp.class.getResource(cssPath).toExternalForm());
+                System.out.println("✅ CSS loaded");
+            }
+            
+            // Set scene SEKALI SAJA! (tidak akan pernah diganti lagi!)
+            primaryStage.setScene(mainScene);
             primaryStage.setTitle("Sistem Inventaris & Peminjaman Ruangan");
             
-            // Setup fullscreen toggle (F11)
+            // Disable fullscreen exit hint
+            primaryStage.setFullScreenExitHint("");
+            
+            // Setup fullscreen toggle
             setupFullscreenToggle();
             
             // Setup fullscreen event listener
@@ -62,11 +83,21 @@ public class MainApp extends Application {
                 }
             });
             
-            System.out.println("\n[3/3] Showing stage...");
+            System.out.println("\n[3/4] Loading initial content...");
+            // Load konten pertama (User Login)
+            showUserLogin();
+            
+            System.out.println("\n[4/4] Showing stage...");
             primaryStage.show();
             
+            // START IN FULLSCREEN BY DEFAULT
+            primaryStage.setFullScreen(true);
+            isFullscreen = true;
+            System.out.println("🖥️  Starting in FULLSCREEN mode (default)");
+            
             System.out.println("\n✅ Application started successfully!");
-            System.out.println("📌 Tekan F11 untuk toggle fullscreen");
+            System.out.println("⚡ Using SINGLE SCENE architecture (Zero Flicker!)");
+            System.out.println("📌 Tekan F11 atau ESC untuk toggle fullscreen");
             System.out.println("========================================\n");
             
         } catch (Exception e) {
@@ -80,14 +111,23 @@ public class MainApp extends Application {
     }
     
     /**
-     * Setup fullscreen toggle dengan F11
+     * Setup fullscreen toggle dengan F11 dan ESC
      */
     private static void setupFullscreenToggle() {
-        if (primaryStage.getScene() != null) {
-            primaryStage.getScene().getAccelerators().put(
+        if (mainScene != null) {
+            // F11 untuk toggle fullscreen
+            mainScene.getAccelerators().put(
                 new KeyCodeCombination(KeyCode.F11),
                 () -> toggleFullscreen()
             );
+            
+            // ESC untuk keluar dari fullscreen
+            mainScene.setOnKeyPressed(event -> {
+                if (event.getCode() == KeyCode.ESCAPE && isFullscreen) {
+                    toggleFullscreen();
+                    event.consume();
+                }
+            });
         }
     }
     
@@ -108,63 +148,64 @@ public class MainApp extends Application {
     // ========== ADMIN SCENES ==========
     
     public static void showLoginScene() {
-        loadScene("/fxml/Login.fxml", 700, 500, "Login Admin");
+        loadContent("/fxml/Login.fxml", "Login Admin");
     }
     
     public static void showDashboard() {
-        loadScene("/fxml/Dashboard.fxml", 800, 600, "Dashboard Admin");
+        loadContent("/fxml/Dashboard.fxml", "Dashboard Admin");
     }
     
     public static void showRuanganScene() {
-        loadScene("/fxml/DaftarRuangan.fxml", 1100, 700, "Daftar Ruangan");
+        loadContent("/fxml/DaftarRuangan.fxml", "Daftar Ruangan");
     }
     
     public static void showPeminjamanScene() {
-        loadScene("/fxml/DataPeminjaman.fxml", 1200, 700, "Data Peminjaman");
+        loadContent("/fxml/DataPeminjaman.fxml", "Data Peminjaman");
     }
     
     // ========== USER SCENES ==========
     
     public static void showUserLogin() {
-        loadScene("/fxml/UserLogin.fxml", 700, 550, "Login User");
+        loadContent("/fxml/UserLogin.fxml", "Login User");
     }
     
     public static void showUserRegister() {
-        loadScene("/fxml/UserRegister.fxml", 700, 650, "Registrasi User");
+        loadContent("/fxml/UserRegister.fxml", "Registrasi User");
     }
     
     public static void showUserDashboard() {
-        loadScene("/fxml/UserDashboard.fxml", 900, 650, "Dashboard User");
+        loadContent("/fxml/UserDashboard.fxml", "Dashboard User");
     }
     
     public static void showUserRuanganList() {
-        loadScene("/fxml/UserRuanganList.fxml", 1000, 700, "Daftar Ruangan");
+        loadContent("/fxml/UserRuanganList.fxml", "Daftar Ruangan");
     }
     
     public static void showUserPeminjamanForm() {
-        loadScene("/fxml/UserPeminjamanForm.fxml", 700, 750, "Form Peminjaman");
+        loadContent("/fxml/UserPeminjamanForm.fxml", "Form Peminjaman");
     }
     
     public static void showUserRiwayat() {
-        loadScene("/fxml/UserRiwayat.fxml", 1100, 700, "Riwayat Peminjaman");
+        loadContent("/fxml/UserRiwayat.fxml", "Riwayat Peminjaman");
     }
     
     public static void showJadwalBulanan() {
-        loadScene("/fxml/JadwalBulanan.fxml", 1100, 700, "Jadwal Bulanan");
+        loadContent("/fxml/JadwalBulanan.fxml", "Jadwal Bulanan");
     }
     
     public static void showUserProfile() {
-        loadScene("/fxml/UserProfile.fxml", 700, 700, "Profile User");
+        loadContent("/fxml/UserProfile.fxml", "Profile User");
     }
     
-    // ========== HELPER METHOD ==========
+    // ========== REVOLUTIONARY METHOD: Load Content Instead of Scene! ==========
     
-    private static void loadScene(String fxmlPath, int width, int height, String title) {
+    /**
+     * Load FXML content dan replace di rootContainer
+     * INI YANG BIKIN ZERO FLICKER! ⚡
+     */
+    private static void loadContent(String fxmlPath, String title) {
         try {
-            System.out.println("\n📄 Loading scene: " + fxmlPath);
-            
-            // Save current fullscreen state BEFORE loading
-            boolean wasFullscreen = isFullscreen;
+            System.out.println("\n📄 Loading content: " + fxmlPath);
             
             // Check if file exists
             if (MainApp.class.getResource(fxmlPath) == null) {
@@ -174,53 +215,31 @@ public class MainApp extends Application {
             
             // Load FXML
             FXMLLoader loader = new FXMLLoader(MainApp.class.getResource(fxmlPath));
-            Parent root = loader.load();
-            System.out.println("   ✅ FXML loaded successfully");
+            Parent content = loader.load();
+            System.out.println("   ✅ Content loaded successfully");
             
-            // Check CSS file
-            String cssPath = "/css/style.css";
-            if (MainApp.class.getResource(cssPath) == null) {
-                System.out.println("   ⚠️  CSS file not found: " + cssPath);
-            } else {
-                System.out.println("   ✅ CSS file found");
+            // [MAGIC HAPPENS HERE] Ganti content, BUKAN scene!
+            // Ini yang bikin instant & zero flicker! ⚡⚡⚡
+            rootContainer.getChildren().setAll(content);
+            
+            // Make content fill the container
+            if (content instanceof javafx.scene.layout.Region) {
+                javafx.scene.layout.Region region = (javafx.scene.layout.Region) content;
+                region.setPrefWidth(javafx.stage.Screen.getPrimary().getBounds().getWidth());
+                region.setPrefHeight(javafx.stage.Screen.getPrimary().getBounds().getHeight());
             }
             
-            // Create scene
-            Scene scene = new Scene(root, width, height);
-            
-            // Add CSS if exists
-            if (MainApp.class.getResource(cssPath) != null) {
-                scene.getStylesheets().add(MainApp.class.getResource(cssPath).toExternalForm());
-                System.out.println("   ✅ CSS applied");
-            }
-            
-            // IMPORTANT: If was fullscreen, temporarily exit to set new scene
-            if (wasFullscreen) {
-                primaryStage.setFullScreen(false);
-            }
-            
-            // Set scene
-            primaryStage.setScene(scene);
+            // Update title
             primaryStage.setTitle(title);
             
-            // Re-setup fullscreen toggle for new scene
-            setupFullscreenToggle();
-            
-            // IMMEDIATELY restore fullscreen BEFORE showing (no delay!)
-            if (wasFullscreen) {
-                primaryStage.setFullScreen(true);
-                System.out.println("🖥️  Fullscreen restored (no delay)");
-            } else {
-                primaryStage.centerOnScreen();
-            }
-            
-            System.out.println("   ✅ Scene loaded: " + title);
+            System.out.println("   ⚡ Content swapped instantly (zero flicker!)");
+            System.out.println("   ✅ Page loaded: " + title);
             
         } catch (Exception e) {
-            System.err.println("\n❌ ERROR loading scene: " + fxmlPath);
+            System.err.println("\n❌ ERROR loading content: " + fxmlPath);
             e.printStackTrace();
             
-            showErrorDialog("Scene Load Error", 
+            showErrorDialog("Content Load Error", 
                 "Gagal memuat halaman: " + title + "\n\n" +
                 "File: " + fxmlPath + "\n" +
                 "Error: " + e.getMessage() + "\n\n" +
@@ -253,7 +272,8 @@ public class MainApp extends Application {
     }
     
     public static void main(String[] args) {
-        System.out.println("\n🚀 Starting Sistem Inventaris & Peminjaman Ruangan...\n");
+        System.out.println("\n🚀 Starting Sistem Inventaris & Peminjaman Ruangan...");
+        System.out.println("⚡ Single Scene Architecture - Zero Flicker Mode!\n");
         launch(args);
     }
 }

@@ -48,12 +48,15 @@
                            </children>
                         </VBox>
                         
-                        <CheckBox fx:id="cbProyektor" text="Ada Proyektor" />
-                        
                         <VBox spacing="5.0">
                            <children>
-                              <Label text="Kondisi HDMI:" />
-                              <ComboBox fx:id="cbHdmi" maxWidth="1.7976931348623157E308" promptText="Pilih kondisi" styleClass="combo-box" />
+                              <Label text="Fasilitas:" />
+                              <TextArea fx:id="txtFasilitas" prefHeight="80.0" promptText="Contoh: Proyektor, HDMI (baik), AC, Whiteboard" styleClass="text-field" wrapText="true" />
+                              <Label text="*Pisahkan dengan koma" styleClass="info-label">
+                                 <font>
+                                    <Font size="10.0" />
+                                 </font>
+                              </Label>
                            </children>
                         </VBox>
                         
@@ -94,10 +97,9 @@
                            <columns>
                               <TableColumn fx:id="colId" prefWidth="50.0" text="ID" />
                               <TableColumn fx:id="colNama" prefWidth="200.0" text="Nama Ruangan" />
-                              <TableColumn fx:id="colKursi" prefWidth="100.0" text="Kursi" />
-                              <TableColumn fx:id="colProyektor" prefWidth="120.0" text="Proyektor" />
-                              <TableColumn fx:id="colHdmi" prefWidth="120.0" text="HDMI" />
-                              <TableColumn fx:id="colStatus" prefWidth="120.0" text="Status" />
+                              <TableColumn fx:id="colKursi" prefWidth="80.0" text="Kursi" />
+                              <TableColumn fx:id="colFasilitas" prefWidth="300.0" text="Fasilitas" />
+                              <TableColumn fx:id="colStatus" prefWidth="100.0" text="Status" />
                            </columns>
                         </TableView>
                      </children>

@@ -42,11 +42,6 @@ public class UserRuanganListController {
         // Setup table columns
         colNama.setCellValueFactory(new PropertyValueFactory<>("namaRuangan"));
         colKursi.setCellValueFactory(new PropertyValueFactory<>("jumlahKursi"));
-        colProyektor.setCellValueFactory(cellData -> 
-            new javafx.beans.property.SimpleStringProperty(
-                cellData.getValue().isAdaProyektor() ? "Ada" : "Tidak Ada"
-            )
-        );
         colHdmi.setCellValueFactory(new PropertyValueFactory<>("kondisiHdmi"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
         

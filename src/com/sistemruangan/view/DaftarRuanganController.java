@@ -19,14 +19,12 @@ public class DaftarRuanganController {
     @FXML private TableColumn<Ruangan, Integer> colId;
     @FXML private TableColumn<Ruangan, String> colNama;
     @FXML private TableColumn<Ruangan, Integer> colKursi;
-    @FXML private TableColumn<Ruangan, String> colProyektor;
-    @FXML private TableColumn<Ruangan, String> colHdmi;
+    @FXML private TableColumn<Ruangan, String> colFasilitas;
     @FXML private TableColumn<Ruangan, String> colStatus;
     
     @FXML private TextField txtNama;
     @FXML private TextField txtKursi;
-    @FXML private CheckBox cbProyektor;
-    @FXML private ComboBox<String> cbHdmi;
+    @FXML private TextArea txtFasilitas; 
     @FXML private ComboBox<String> cbStatus;
     @FXML private TextField txtSearch;
     
@@ -48,18 +46,12 @@ public class DaftarRuanganController {
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colNama.setCellValueFactory(new PropertyValueFactory<>("namaRuangan"));
         colKursi.setCellValueFactory(new PropertyValueFactory<>("jumlahKursi"));
-        colProyektor.setCellValueFactory(cellData -> 
-            new javafx.beans.property.SimpleStringProperty(
-                cellData.getValue().isAdaProyektor() ? "Ada" : "Tidak Ada"
-            )
-        );
-        colHdmi.setCellValueFactory(new PropertyValueFactory<>("kondisiHdmi"));
+        colFasilitas.setCellValueFactory(new PropertyValueFactory<>("fasilitas"));
+        colFasilitas.setStyle("-fx-alignment: CENTER-LEFT;");
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
         
         // Setup ComboBox
-        cbHdmi.getItems().addAll("baik", "rusak");
         cbStatus.getItems().addAll("tersedia", "dipinjam");
-        cbHdmi.setValue("baik");
         cbStatus.setValue("tersedia");
         
         // Load data
@@ -98,8 +90,7 @@ public class DaftarRuanganController {
     private void populateFields(Ruangan ruangan) {
         txtNama.setText(ruangan.getNamaRuangan());
         txtKursi.setText(String.valueOf(ruangan.getJumlahKursi()));
-        cbProyektor.setSelected(ruangan.isAdaProyektor());
-        cbHdmi.setValue(ruangan.getKondisiHdmi());
+        txtFasilitas.setText(ruangan.getFasilitas());
         cbStatus.setValue(ruangan.getStatus());
     }
     
@@ -109,8 +100,7 @@ public class DaftarRuanganController {
     private void clearFields() {
         txtNama.clear();
         txtKursi.clear();
-        cbProyektor.setSelected(false);
-        cbHdmi.setValue("baik");
+        txtFasilitas.clear();
         cbStatus.setValue("tersedia");
         selectedRuangan = null;
         tableRuangan.getSelectionModel().clearSelection();
@@ -123,8 +113,7 @@ public class DaftarRuanganController {
         Ruangan ruangan = new Ruangan();
         ruangan.setNamaRuangan(txtNama.getText().trim());
         ruangan.setJumlahKursi(Integer.parseInt(txtKursi.getText().trim()));
-        ruangan.setAdaProyektor(cbProyektor.isSelected());
-        ruangan.setKondisiHdmi(cbHdmi.getValue());
+        ruangan.setFasilitas(txtFasilitas.getText().trim());
         ruangan.setStatus(cbStatus.getValue());
         
         if (ruanganController.tambahRuangan(ruangan)) {
@@ -147,8 +136,7 @@ public class DaftarRuanganController {
         
         selectedRuangan.setNamaRuangan(txtNama.getText().trim());
         selectedRuangan.setJumlahKursi(Integer.parseInt(txtKursi.getText().trim()));
-        selectedRuangan.setAdaProyektor(cbProyektor.isSelected());
-        selectedRuangan.setKondisiHdmi(cbHdmi.getValue());
+        selectedRuangan.setFasilitas(txtFasilitas.getText().trim());
         selectedRuangan.setStatus(cbStatus.getValue());
         
         if (ruanganController.updateRuangan(selectedRuangan)) {

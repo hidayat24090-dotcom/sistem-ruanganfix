@@ -159,7 +159,7 @@
                         
                         <HBox alignment="CENTER" spacing="15.0">
                            <children>
-                              <Button fx:id="btnSubmit" mnemonicParsing="false" onAction="#handleSubmit" prefWidth="200.0" styleClass="primary-button" text="📤 Ajukan Peminjaman">
+                              <Button fx:id="btnSubmit" mnemonicParsing="false" onAction="#handleSubmit" prefWidth="200.0" styleClass="success-button" text="📤 Ajukan Peminjaman">
                                  <font>
                                     <Font name="System Bold" size="14.0" />
                                  </font>
