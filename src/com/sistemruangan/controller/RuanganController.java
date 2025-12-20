@@ -8,12 +8,12 @@ import javafx.collections.ObservableList;
 import java.sql.*;
 
 /**
- * Controller untuk operasi CRUD Ruangan - UPDATED with Fasilitas
+ * Controller untuk operasi CRUD Ruangan - WITH PHOTO SUPPORT
  */
 public class RuanganController {
     
     /**
-     * Mengambil semua data ruangan dari database
+     * Mengambil semua data ruangan dari database (dengan foto)
      */
     public ObservableList<Ruangan> getAllRuangan() {
         ObservableList<Ruangan> ruanganList = FXCollections.observableArrayList();
@@ -28,8 +28,9 @@ public class RuanganController {
                     rs.getInt("id"),
                     rs.getString("nama_ruangan"),
                     rs.getInt("jumlah_kursi"),
-                    rs.getString("fasilitas"),  // NEW: fasilitas as string
-                    rs.getString("status")
+                    rs.getString("fasilitas"),
+                    rs.getString("status"),
+                    rs.getString("foto_path") // NEW: foto path
                 );
                 ruanganList.add(ruangan);
             }
@@ -42,10 +43,10 @@ public class RuanganController {
     }
     
     /**
-     * Menambah ruangan baru ke database
+     * Menambah ruangan baru ke database (dengan foto)
      */
     public boolean tambahRuangan(Ruangan ruangan) {
-        String query = "INSERT INTO ruangan (nama_ruangan, jumlah_kursi, fasilitas, status) VALUES (?, ?, ?, ?)";
+        String query = "INSERT INTO ruangan (nama_ruangan, jumlah_kursi, fasilitas, status, foto_path) VALUES (?, ?, ?, ?, ?)";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
@@ -54,6 +55,7 @@ public class RuanganController {
             pstmt.setInt(2, ruangan.getJumlahKursi());
             pstmt.setString(3, ruangan.getFasilitas());
             pstmt.setString(4, ruangan.getStatus());
+            pstmt.setString(5, ruangan.getFotoPath());
             
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
@@ -66,10 +68,10 @@ public class RuanganController {
     }
     
     /**
-     * Mengupdate data ruangan
+     * Mengupdate data ruangan (dengan foto)
      */
     public boolean updateRuangan(Ruangan ruangan) {
-        String query = "UPDATE ruangan SET nama_ruangan=?, jumlah_kursi=?, fasilitas=?, status=? WHERE id=?";
+        String query = "UPDATE ruangan SET nama_ruangan=?, jumlah_kursi=?, fasilitas=?, status=?, foto_path=? WHERE id=?";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
@@ -78,13 +80,36 @@ public class RuanganController {
             pstmt.setInt(2, ruangan.getJumlahKursi());
             pstmt.setString(3, ruangan.getFasilitas());
             pstmt.setString(4, ruangan.getStatus());
-            pstmt.setInt(5, ruangan.getId());
+            pstmt.setString(5, ruangan.getFotoPath());
+            pstmt.setInt(6, ruangan.getId());
             
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
             
         } catch (SQLException e) {
             System.err.println("Error update ruangan: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Update foto ruangan saja
+     */
+    public boolean updateFotoRuangan(int idRuangan, String fotoPath) {
+        String query = "UPDATE ruangan SET foto_path=? WHERE id=?";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            
+            pstmt.setString(1, fotoPath);
+            pstmt.setInt(2, idRuangan);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            System.err.println("Error update foto ruangan: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -150,7 +175,8 @@ public class RuanganController {
                     rs.getString("nama_ruangan"),
                     rs.getInt("jumlah_kursi"),
                     rs.getString("fasilitas"),
-                    rs.getString("status")
+                    rs.getString("status"),
+                    rs.getString("foto_path")
                 );
             }
         } catch (SQLException e) {
@@ -180,7 +206,8 @@ public class RuanganController {
                     rs.getString("nama_ruangan"),
                     rs.getInt("jumlah_kursi"),
                     rs.getString("fasilitas"),
-                    rs.getString("status")
+                    rs.getString("status"),
+                    rs.getString("foto_path")
                 );
                 ruanganList.add(ruangan);
             }

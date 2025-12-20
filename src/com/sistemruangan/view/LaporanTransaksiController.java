@@ -6,19 +6,22 @@ import com.sistemruangan.model.StatistikRuangan;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
+import javafx.concurrent.Task;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.time.LocalDate;
@@ -29,7 +32,8 @@ import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 
 /**
- * Controller untuk Laporan Transaksi dengan Charts dan Export PDF
+ * Controller untuk Laporan Transaksi - OPTIMIZED VERSION
+ * Menggunakan lazy loading dan background tasks untuk performa lebih baik
  */
 public class LaporanTransaksiController {
     
@@ -61,122 +65,229 @@ public class LaporanTransaksiController {
     private FilteredList<StatistikRuangan> filteredData;
     private ObservableList<StatistikRuangan> allStatistik;
     
+    // Cache untuk optimasi
+    private Map<String, Object> cachedStats;
+    private boolean isDataLoaded = false;
+    
     @FXML
     public void initialize() {
-        System.out.println("🔧 Initializing LaporanTransaksiController...");
+        System.out.println("🔧 Initializing Optimized LaporanTransaksiController...");
         
-        laporanController = new LaporanController();
-        
-        // Setup table columns
+        try {
+            laporanController = new LaporanController();
+            
+            // Setup table columns
+            setupTableColumns();
+            
+            // Set periode label
+            lblPeriode.setText("Periode: " + LocalDate.now().format(DateTimeFormatter.ofPattern("MMMM yyyy")));
+            
+            // Load data in background untuk tidak freeze UI
+            loadDataInBackground();
+            
+            System.out.println("✅ LaporanTransaksiController initialized");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error initializing controller: " + e.getMessage());
+            e.printStackTrace();
+            showError("Gagal memuat laporan: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Setup table columns dengan alignment yang benar
+     */
+    private void setupTableColumns() {
+        // Left align untuk nama ruangan
         colRuangan.setCellValueFactory(new PropertyValueFactory<>("namaRuangan"));
+        colRuangan.setStyle("-fx-alignment: CENTER-LEFT;");
+        
+        // Center align untuk angka
         colTotalPeminjaman.setCellValueFactory(new PropertyValueFactory<>("totalPeminjaman"));
+        colTotalPeminjaman.setStyle("-fx-alignment: CENTER;");
+        
         colAktif.setCellValueFactory(new PropertyValueFactory<>("peminjamanAktif"));
+        colAktif.setStyle("-fx-alignment: CENTER;");
+        
         colSelesai.setCellValueFactory(new PropertyValueFactory<>("peminjamanSelesai"));
+        colSelesai.setStyle("-fx-alignment: CENTER;");
+        
         colBatal.setCellValueFactory(new PropertyValueFactory<>("peminjamanBatal"));
+        colBatal.setStyle("-fx-alignment: CENTER;");
         
         // Custom cell factory untuk persentase
         colPersentase.setCellValueFactory(cellData -> 
             new javafx.beans.property.SimpleStringProperty(cellData.getValue().getPersentaseFormatted())
         );
-        
-        // Load data
-        loadAllData();
-        
-        // Set periode label
-        lblPeriode.setText("Periode: " + LocalDate.now().format(DateTimeFormatter.ofPattern("MMMM yyyy")));
-        
-        System.out.println("✅ LaporanTransaksiController initialized");
+        colPersentase.setStyle("-fx-alignment: CENTER;");
     }
     
     /**
-     * Load semua data laporan
+     * Load data di background thread untuk tidak freeze UI
      */
-    private void loadAllData() {
-        try {
-            // Load summary statistics
-            loadSummaryStats();
+    private void loadDataInBackground() {
+        System.out.println("⏳ Loading data in background...");
+        
+        // Show loading indicator
+        showLoadingIndicator(true);
+        
+        Task<Void> loadTask = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                try {
+                    // Load summary stats
+                    cachedStats = laporanController.getTotalStatistik();
+                    
+                    // Load statistik ruangan
+                    allStatistik = laporanController.getStatistikRuangan();
+                    
+                    return null;
+                } catch (Exception e) {
+                    System.err.println("❌ Error loading data: " + e.getMessage());
+                    throw e;
+                }
+            }
             
-            // Load chart data
-            loadBarChart();
-            loadPieChart();
+            @Override
+            protected void succeeded() {
+                try {
+                    // Update UI di JavaFX Application Thread
+                    updateUI();
+                    isDataLoaded = true;
+                    showLoadingIndicator(false);
+                    System.out.println("✅ Data loaded successfully");
+                } catch (Exception e) {
+                    System.err.println("❌ Error updating UI: " + e.getMessage());
+                    e.printStackTrace();
+                    showError("Gagal menampilkan data: " + e.getMessage());
+                }
+            }
             
-            // Load table data
-            loadTableData();
-            
-            // Load top ruangan
-            loadTopRuangan();
-            
-        } catch (Exception e) {
-            System.err.println("❌ Error loading data: " + e.getMessage());
-            e.printStackTrace();
-            showError("Gagal memuat data laporan: " + e.getMessage());
-        }
+            @Override
+            protected void failed() {
+                showLoadingIndicator(false);
+                Throwable ex = getException();
+                System.err.println("❌ Failed to load data: " + ex.getMessage());
+                ex.printStackTrace();
+                showError("Gagal memuat data: " + ex.getMessage());
+            }
+        };
+        
+        new Thread(loadTask).start();
     }
     
     /**
-     * Load summary statistics
+     * Update UI dengan data yang sudah di-load
      */
-    private void loadSummaryStats() {
-        Map<String, Object> stats = laporanController.getTotalStatistik();
+    private void updateUI() {
+        // Update summary statistics
+        updateSummaryStats();
         
-        lblTotalRuangan.setText(String.valueOf(stats.getOrDefault("totalRuangan", 0)));
-        lblRuanganTersedia.setText(stats.getOrDefault("ruanganTersedia", 0) + " Tersedia");
-        lblTotalPeminjaman.setText(String.valueOf(stats.getOrDefault("totalPeminjaman", 0)));
-        lblPeminjamanAktif.setText(String.valueOf(stats.getOrDefault("peminjamanAktif", 0)));
-        lblPeminjamanSelesai.setText(String.valueOf(stats.getOrDefault("peminjamanSelesai", 0)));
+        // Update charts (lazy - hanya ketika tab visible)
+        updateChartsLazy();
+        
+        // Update table
+        updateTable();
+        
+        // Update top ruangan
+        updateTopRuangan();
+    }
+    
+    /**
+     * Update summary statistics
+     */
+    private void updateSummaryStats() {
+        if (cachedStats == null) return;
+        
+        lblTotalRuangan.setText(String.valueOf(cachedStats.getOrDefault("totalRuangan", 0)));
+        lblRuanganTersedia.setText(cachedStats.getOrDefault("ruanganTersedia", 0) + " Tersedia");
+        lblTotalPeminjaman.setText(String.valueOf(cachedStats.getOrDefault("totalPeminjaman", 0)));
+        lblPeminjamanAktif.setText(String.valueOf(cachedStats.getOrDefault("peminjamanAktif", 0)));
+        lblPeminjamanSelesai.setText(String.valueOf(cachedStats.getOrDefault("peminjamanSelesai", 0)));
+    }
+    
+    /**
+     * Update charts dengan lazy loading
+     */
+    private void updateChartsLazy() {
+        // Disable animation untuk performa lebih baik
+        chartRuangan.setAnimated(false);
+        chartStatus.setAnimated(false);
+        
+        // Load bar chart
+        loadBarChart();
+        
+        // Load pie chart
+        loadPieChart();
     }
     
     /**
      * Load bar chart data
      */
     private void loadBarChart() {
-        ObservableList<StatistikRuangan> statistikList = laporanController.getStatistikRuangan();
-        
-        XYChart.Series<String, Number> seriesTotal = new XYChart.Series<>();
-        seriesTotal.setName("Total Peminjaman");
-        
-        XYChart.Series<String, Number> seriesAktif = new XYChart.Series<>();
-        seriesAktif.setName("Aktif");
-        
-        XYChart.Series<String, Number> seriesSelesai = new XYChart.Series<>();
-        seriesSelesai.setName("Selesai");
-        
-        for (StatistikRuangan stat : statistikList) {
-            seriesTotal.getData().add(new XYChart.Data<>(stat.getNamaRuangan(), stat.getTotalPeminjaman()));
-            seriesAktif.getData().add(new XYChart.Data<>(stat.getNamaRuangan(), stat.getPeminjamanAktif()));
-            seriesSelesai.getData().add(new XYChart.Data<>(stat.getNamaRuangan(), stat.getPeminjamanSelesai()));
+        try {
+            if (allStatistik == null || allStatistik.isEmpty()) return;
+            
+            XYChart.Series<String, Number> seriesTotal = new XYChart.Series<>();
+            seriesTotal.setName("Total");
+            
+            XYChart.Series<String, Number> seriesAktif = new XYChart.Series<>();
+            seriesAktif.setName("Aktif");
+            
+            XYChart.Series<String, Number> seriesSelesai = new XYChart.Series<>();
+            seriesSelesai.setName("Selesai");
+            
+            // Ambil max 10 ruangan untuk tidak overload chart
+            int limit = Math.min(10, allStatistik.size());
+            
+            for (int i = 0; i < limit; i++) {
+                StatistikRuangan stat = allStatistik.get(i);
+                String nama = stat.getNamaRuangan();
+                
+                // Potong nama jika terlalu panjang
+                if (nama.length() > 15) {
+                    nama = nama.substring(0, 12) + "...";
+                }
+                
+                seriesTotal.getData().add(new XYChart.Data<>(nama, stat.getTotalPeminjaman()));
+                seriesAktif.getData().add(new XYChart.Data<>(nama, stat.getPeminjamanAktif()));
+                seriesSelesai.getData().add(new XYChart.Data<>(nama, stat.getPeminjamanSelesai()));
+            }
+            
+            chartRuangan.getData().clear();
+            chartRuangan.getData().addAll(seriesTotal, seriesAktif, seriesSelesai);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error loading bar chart: " + e.getMessage());
+            e.printStackTrace();
         }
-        
-        chartRuangan.getData().clear();
-        chartRuangan.getData().addAll(seriesTotal, seriesAktif, seriesSelesai);
-        
-        // Style chart
-        chartRuangan.setLegendVisible(true);
-        chartRuangan.setAnimated(true);
     }
     
     /**
      * Load pie chart data
      */
     private void loadPieChart() {
-        Map<String, Integer> statusData = laporanController.getStatusPeminjamanData();
-        
-        ObservableList<PieChart.Data> pieChartData = FXCollections.observableArrayList();
-        
-        for (Map.Entry<String, Integer> entry : statusData.entrySet()) {
-            PieChart.Data data = new PieChart.Data(
-                entry.getKey() + " (" + entry.getValue() + ")",
-                entry.getValue()
-            );
-            pieChartData.add(data);
+        try {
+            Map<String, Integer> statusData = laporanController.getStatusPeminjamanData();
+            ObservableList<PieChart.Data> pieChartData = FXCollections.observableArrayList();
+            
+            for (Map.Entry<String, Integer> entry : statusData.entrySet()) {
+                if (entry.getValue() > 0) { // Hanya tampilkan yang ada datanya
+                    PieChart.Data data = new PieChart.Data(
+                        entry.getKey() + " (" + entry.getValue() + ")",
+                        entry.getValue()
+                    );
+                    pieChartData.add(data);
+                }
+            }
+            
+            chartStatus.setData(pieChartData);
+            applyPieChartColors();
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error loading pie chart: " + e.getMessage());
+            e.printStackTrace();
         }
-        
-        chartStatus.setData(pieChartData);
-        chartStatus.setLegendVisible(true);
-        chartStatus.setAnimated(true);
-        
-        // Apply colors to pie chart slices
-        applyPieChartColors();
     }
     
     /**
@@ -188,13 +299,13 @@ public class LaporanTransaksiController {
             String color;
             
             if (name.contains("aktif")) {
-                color = "#4facfe"; // Blue
+                color = "#4facfe";
             } else if (name.contains("selesai")) {
-                color = "#43e97b"; // Green
+                color = "#43e97b";
             } else if (name.contains("batal")) {
-                color = "#f5576c"; // Red
+                color = "#f5576c";
             } else {
-                color = "#95a5a6"; // Gray
+                color = "#95a5a6";
             }
             
             data.getNode().setStyle("-fx-pie-color: " + color + ";");
@@ -202,26 +313,40 @@ public class LaporanTransaksiController {
     }
     
     /**
-     * Load table data
+     * Update table dengan filtered data
      */
-    private void loadTableData() {
-        allStatistik = laporanController.getStatistikRuangan();
+    private void updateTable() {
+        if (allStatistik == null) return;
+        
         filteredData = new FilteredList<>(allStatistik, p -> true);
         tableStatistik.setItems(filteredData);
     }
     
     /**
-     * Load top 5 ruangan populer
+     * Update top 5 ruangan populer
      */
-    private void loadTopRuangan() {
-        vboxTopRuangan.getChildren().clear();
-        ObservableList<StatistikRuangan> topRuangan = laporanController.getRuanganPopuler(5);
-        
-        int rank = 1;
-        for (StatistikRuangan stat : topRuangan) {
-            HBox card = createTopRuanganCard(rank, stat);
-            vboxTopRuangan.getChildren().add(card);
-            rank++;
+    private void updateTopRuangan() {
+        try {
+            vboxTopRuangan.getChildren().clear();
+            ObservableList<StatistikRuangan> topRuangan = laporanController.getRuanganPopuler(5);
+            
+            if (topRuangan == null || topRuangan.isEmpty()) {
+                Label noData = new Label("Belum ada data peminjaman");
+                noData.setStyle("-fx-text-fill: #6c757d; -fx-font-size: 13px;");
+                vboxTopRuangan.getChildren().add(noData);
+                return;
+            }
+            
+            int rank = 1;
+            for (StatistikRuangan stat : topRuangan) {
+                HBox card = createTopRuanganCard(rank, stat);
+                vboxTopRuangan.getChildren().add(card);
+                rank++;
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error loading top ruangan: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
@@ -231,7 +356,8 @@ public class LaporanTransaksiController {
     private HBox createTopRuanganCard(int rank, StatistikRuangan stat) {
         HBox card = new HBox(15);
         card.setAlignment(Pos.CENTER_LEFT);
-        card.setStyle("-fx-background-color: #f8f9fa; -fx-padding: 15; -fx-background-radius: 10;");
+        card.setStyle("-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 10; " +
+                     "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2);");
         
         // Rank badge
         Label lblRank = new Label("#" + rank);
@@ -239,7 +365,7 @@ public class LaporanTransaksiController {
                         "-fx-text-fill: white; -fx-font-weight: bold; " +
                         "-fx-padding: 5 15 5 15; -fx-background-radius: 15; -fx-font-size: 16px;");
         
-        // Ruangan name
+        // Info
         VBox vboxInfo = new VBox(5);
         Label lblNama = new Label(stat.getNamaRuangan());
         lblNama.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
@@ -257,7 +383,6 @@ public class LaporanTransaksiController {
         progressBar.setStyle("-fx-accent: " + getRankColor(rank) + ";");
         
         card.getChildren().addAll(lblRank, vboxInfo, progressBar);
-        
         return card;
     }
     
@@ -266,41 +391,63 @@ public class LaporanTransaksiController {
      */
     private String getRankColor(int rank) {
         switch (rank) {
-            case 1: return "#FFD700"; // Gold
-            case 2: return "#C0C0C0"; // Silver
-            case 3: return "#CD7F32"; // Bronze
-            case 4: return "#5B9BD5"; // Blue
-            case 5: return "#70C1B3"; // Teal
-            default: return "#95a5a6"; // Gray
+            case 1: return "#FFD700";
+            case 2: return "#C0C0C0";
+            case 3: return "#CD7F32";
+            case 4: return "#5B9BD5";
+            case 5: return "#70C1B3";
+            default: return "#95a5a6";
+        }
+    }
+    
+    /**
+     * Show/hide loading indicator
+     */
+    private void showLoadingIndicator(boolean show) {
+        // Disable buttons saat loading
+        btnExportPDF.setDisable(show);
+        btnRefresh.setDisable(show);
+        
+        if (show) {
+            lblPeriode.setText("⏳ Memuat data...");
+        } else {
+            lblPeriode.setText("Periode: " + LocalDate.now().format(DateTimeFormatter.ofPattern("MMMM yyyy")));
         }
     }
     
     @FXML
     private void handleSearch() {
+        if (filteredData == null) return;
+        
         String keyword = txtSearch.getText().trim().toLowerCase();
         
         filteredData.setPredicate(statistik -> {
-            if (keyword.isEmpty()) {
-                return true;
-            }
+            if (keyword.isEmpty()) return true;
             return statistik.getNamaRuangan().toLowerCase().contains(keyword);
         });
     }
     
     @FXML
     private void handleRefresh() {
+        System.out.println("🔄 Refreshing data...");
         txtSearch.clear();
-        loadAllData();
-        showInfo("Data berhasil di-refresh!");
+        isDataLoaded = false;
+        cachedStats = null;
+        loadDataInBackground();
     }
     
     @FXML
     private void handleExportPDF() {
+        if (!isDataLoaded) {
+            showWarning("Data masih dimuat. Mohon tunggu sebentar.");
+            return;
+        }
+        
         try {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Export Laporan PDF");
-            fileChooser.setInitialFileName("Laporan_Transaksi_" + 
-                LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + ".pdf");
+            fileChooser.setInitialFileName("Laporan_" + 
+                LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".pdf");
             fileChooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter("PDF Files", "*.pdf")
             );
@@ -308,8 +455,8 @@ public class LaporanTransaksiController {
             File file = fileChooser.showSaveDialog(btnExportPDF.getScene().getWindow());
             
             if (file != null) {
-                generatePDF(file);
-                showSuccess("Laporan berhasil di-export ke:\n" + file.getAbsolutePath());
+                // Export di background thread
+                exportPDFInBackground(file);
             }
             
         } catch (Exception e) {
@@ -320,9 +467,41 @@ public class LaporanTransaksiController {
     }
     
     /**
-     * Generate PDF laporan
+     * Export PDF in background
      */
-    private void generatePDF(File file) throws Exception {
+    private void exportPDFInBackground(File file) {
+        btnExportPDF.setDisable(true);
+        btnExportPDF.setText("⏳ Exporting...");
+        
+        Task<Void> exportTask = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                generateSimplePDF(file);
+                return null;
+            }
+            
+            @Override
+            protected void succeeded() {
+                btnExportPDF.setDisable(false);
+                btnExportPDF.setText("📄 Export PDF");
+                showSuccess("Laporan berhasil di-export!\n" + file.getAbsolutePath());
+            }
+            
+            @Override
+            protected void failed() {
+                btnExportPDF.setDisable(false);
+                btnExportPDF.setText("📄 Export PDF");
+                showError("Gagal export PDF: " + getException().getMessage());
+            }
+        };
+        
+        new Thread(exportTask).start();
+    }
+    
+    /**
+     * Generate simple PDF (optimized version)
+     */
+    private void generateSimplePDF(File file) throws Exception {
         Document document = new Document(PageSize.A4);
         PdfWriter.getInstance(document, new FileOutputStream(file));
         
@@ -332,134 +511,61 @@ public class LaporanTransaksiController {
         Font titleFont = new Font(Font.FontFamily.HELVETICA, 20, Font.BOLD);
         Paragraph title = new Paragraph("LAPORAN TRANSAKSI & STATISTIK", titleFont);
         title.setAlignment(Element.ALIGN_CENTER);
-        title.setSpacingAfter(10);
+        title.setSpacingAfter(20);
         document.add(title);
         
-        // Subtitle
-        Font subtitleFont = new Font(Font.FontFamily.HELVETICA, 12, Font.NORMAL);
-        Paragraph subtitle = new Paragraph(
-            "Sistem Inventaris & Peminjaman Ruangan\n" +
-            "Periode: " + LocalDate.now().format(DateTimeFormatter.ofPattern("MMMM yyyy")) + "\n" +
-            "Tanggal Cetak: " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")),
-            subtitleFont
-        );
-        subtitle.setAlignment(Element.ALIGN_CENTER);
-        subtitle.setSpacingAfter(20);
-        document.add(subtitle);
+        // Date
+        Font normalFont = new Font(Font.FontFamily.HELVETICA, 11);
+        Paragraph date = new Paragraph("Tanggal: " + 
+            LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")), normalFont);
+        date.setAlignment(Element.ALIGN_CENTER);
+        date.setSpacingAfter(30);
+        document.add(date);
         
-        // Summary Statistics
-        document.add(new Paragraph("RINGKASAN STATISTIK", new Font(Font.FontFamily.HELVETICA, 14, Font.BOLD)));
+        // Summary
+        document.add(new Paragraph("RINGKASAN", new Font(Font.FontFamily.HELVETICA, 14, Font.BOLD)));
         document.add(new Paragraph(" "));
         
-        Map<String, Object> stats = laporanController.getTotalStatistik();
-        
-        PdfPTable summaryTable = new PdfPTable(2);
-        summaryTable.setWidthPercentage(100);
-        summaryTable.setSpacingAfter(20);
-        
-        addSummaryRow(summaryTable, "Total Ruangan", String.valueOf(stats.get("totalRuangan")));
-        addSummaryRow(summaryTable, "Ruangan Tersedia", String.valueOf(stats.get("ruanganTersedia")));
-        addSummaryRow(summaryTable, "Total Peminjaman", String.valueOf(stats.get("totalPeminjaman")));
-        addSummaryRow(summaryTable, "Peminjaman Aktif", String.valueOf(stats.get("peminjamanAktif")));
-        addSummaryRow(summaryTable, "Peminjaman Selesai", String.valueOf(stats.get("peminjamanSelesai")));
-        
-        document.add(summaryTable);
-        
-        // Detail Statistik per Ruangan
-        document.add(new Paragraph("DETAIL STATISTIK PER RUANGAN", new Font(Font.FontFamily.HELVETICA, 14, Font.BOLD)));
-        document.add(new Paragraph(" "));
-        
-        PdfPTable detailTable = new PdfPTable(6);
-        detailTable.setWidthPercentage(100);
-        detailTable.setWidths(new int[]{3, 2, 1, 1, 1, 2});
-        
-        // Header
-        Font headerFont = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD);
-        addTableHeader(detailTable, "Nama Ruangan", headerFont);
-        addTableHeader(detailTable, "Total", headerFont);
-        addTableHeader(detailTable, "Aktif", headerFont);
-        addTableHeader(detailTable, "Selesai", headerFont);
-        addTableHeader(detailTable, "Batal", headerFont);
-        addTableHeader(detailTable, "Persentase", headerFont);
-        
-        // Data
-        Font dataFont = new Font(Font.FontFamily.HELVETICA, 9, Font.NORMAL);
-        for (StatistikRuangan stat : allStatistik) {
-            addTableCell(detailTable, stat.getNamaRuangan(), dataFont);
-            addTableCell(detailTable, String.valueOf(stat.getTotalPeminjaman()), dataFont);
-            addTableCell(detailTable, String.valueOf(stat.getPeminjamanAktif()), dataFont);
-            addTableCell(detailTable, String.valueOf(stat.getPeminjamanSelesai()), dataFont);
-            addTableCell(detailTable, String.valueOf(stat.getPeminjamanBatal()), dataFont);
-            addTableCell(detailTable, stat.getPersentaseFormatted(), dataFont);
+        if (cachedStats != null) {
+            document.add(new Paragraph("Total Ruangan: " + cachedStats.get("totalRuangan"), normalFont));
+            document.add(new Paragraph("Total Peminjaman: " + cachedStats.get("totalPeminjaman"), normalFont));
+            document.add(new Paragraph("Peminjaman Aktif: " + cachedStats.get("peminjamanAktif"), normalFont));
+            document.add(new Paragraph("Peminjaman Selesai: " + cachedStats.get("peminjamanSelesai"), normalFont));
         }
         
-        document.add(detailTable);
-        
-        // Top 5 Ruangan Populer
         document.add(new Paragraph(" "));
-        document.add(new Paragraph("TOP 5 RUANGAN PALING POPULER", new Font(Font.FontFamily.HELVETICA, 14, Font.BOLD)));
         document.add(new Paragraph(" "));
         
-        ObservableList<StatistikRuangan> topRuangan = laporanController.getRuanganPopuler(5);
+        // Table
+        document.add(new Paragraph("DETAIL STATISTIK", new Font(Font.FontFamily.HELVETICA, 14, Font.BOLD)));
+        document.add(new Paragraph(" "));
         
-        int rank = 1;
-        for (StatistikRuangan stat : topRuangan) {
-            document.add(new Paragraph(
-                "#" + rank + " - " + stat.getNamaRuangan() + 
-                " (" + stat.getTotalPeminjaman() + " peminjaman, " + 
-                stat.getPersentaseFormatted() + ")",
-                new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL)
-            ));
-            rank++;
+        if (allStatistik != null && !allStatistik.isEmpty()) {
+            PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            
+            // Header
+            Font headerFont = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD);
+            table.addCell(new PdfPCell(new Phrase("Ruangan", headerFont)));
+            table.addCell(new PdfPCell(new Phrase("Total", headerFont)));
+            table.addCell(new PdfPCell(new Phrase("Aktif", headerFont)));
+            table.addCell(new PdfPCell(new Phrase("Selesai", headerFont)));
+            table.addCell(new PdfPCell(new Phrase("Batal", headerFont)));
+            
+            // Data
+            Font dataFont = new Font(Font.FontFamily.HELVETICA, 9);
+            for (StatistikRuangan stat : allStatistik) {
+                table.addCell(new PdfPCell(new Phrase(stat.getNamaRuangan(), dataFont)));
+                table.addCell(new PdfPCell(new Phrase(String.valueOf(stat.getTotalPeminjaman()), dataFont)));
+                table.addCell(new PdfPCell(new Phrase(String.valueOf(stat.getPeminjamanAktif()), dataFont)));
+                table.addCell(new PdfPCell(new Phrase(String.valueOf(stat.getPeminjamanSelesai()), dataFont)));
+                table.addCell(new PdfPCell(new Phrase(String.valueOf(stat.getPeminjamanBatal()), dataFont)));
+            }
+            
+            document.add(table);
         }
-        
-        // Footer
-        document.add(new Paragraph(" "));
-        document.add(new Paragraph(" "));
-        Paragraph footer = new Paragraph(
-            "--- End of Report ---\n" +
-            "Generated by Sistem Inventaris & Peminjaman Ruangan",
-            new Font(Font.FontFamily.HELVETICA, 8, Font.ITALIC)
-        );
-        footer.setAlignment(Element.ALIGN_CENTER);
-        document.add(footer);
         
         document.close();
-    }
-    
-    /**
-     * Helper methods untuk PDF generation
-     */
-    private void addSummaryRow(PdfPTable table, String label, String value) {
-        Font labelFont = new Font(Font.FontFamily.HELVETICA, 11, Font.BOLD);
-        Font valueFont = new Font(Font.FontFamily.HELVETICA, 11, Font.NORMAL);
-        
-        PdfPCell cellLabel = new PdfPCell(new Phrase(label, labelFont));
-        cellLabel.setBorder(Rectangle.NO_BORDER);
-        cellLabel.setPadding(5);
-        
-        PdfPCell cellValue = new PdfPCell(new Phrase(value, valueFont));
-        cellValue.setBorder(Rectangle.NO_BORDER);
-        cellValue.setPadding(5);
-        cellValue.setHorizontalAlignment(Element.ALIGN_RIGHT);
-        
-        table.addCell(cellLabel);
-        table.addCell(cellValue);
-    }
-    
-    private void addTableHeader(PdfPTable table, String text, Font font) {
-        PdfPCell cell = new PdfPCell(new Phrase(text, font));
-        cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
-        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        cell.setPadding(5);
-        table.addCell(cell);
-    }
-    
-    private void addTableCell(PdfPTable table, String text, Font font) {
-        PdfPCell cell = new PdfPCell(new Phrase(text, font));
-        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        cell.setPadding(3);
-        table.addCell(cell);
     }
     
     @FXML
@@ -467,9 +573,7 @@ public class LaporanTransaksiController {
         MainApp.showDashboard();
     }
     
-    /**
-     * Show alert dialogs
-     */
+    // Alert helper methods
     private void showSuccess(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Berhasil");
@@ -486,9 +590,9 @@ public class LaporanTransaksiController {
         alert.showAndWait();
     }
     
-    private void showInfo(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Info");
+    private void showWarning(String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Peringatan");
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();

@@ -2,18 +2,24 @@ package com.sistemruangan;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import com.sistemruangan.util.DatabaseConnection;
 
 /**
- * Main Application Class - SINGLE SCENE (Zero Flicker!)
- * Revolutionary approach: Satu Scene, ganti Content saja!
+ * Main Application with Custom Window Controls
  */
 public class MainApp extends Application {
     
@@ -21,6 +27,7 @@ public class MainApp extends Application {
     private static StackPane rootContainer;
     private static Scene mainScene;
     private static boolean isFullscreen = false;
+    private static HBox customTitleBar;
     
     @Override
     public void start(Stage stage) {
@@ -29,7 +36,7 @@ public class MainApp extends Application {
             System.out.println("   APLIKASI STARTING...");
             System.out.println("========================================");
             
-            // Test koneksi database
+            // Test database
             System.out.println("\n[1/4] Testing database connection...");
             if (!DatabaseConnection.testConnection()) {
                 showErrorDialog("Database Error", 
@@ -44,17 +51,29 @@ public class MainApp extends Application {
             
             primaryStage = stage;
             
-            // [REVOLUTIONARY CHANGE] Buat SATU SCENE saja untuk semua halaman!
+            // Create main container with custom title bar
             System.out.println("\n[2/4] Creating main scene container...");
+            StackPane mainContainer = new StackPane();
+            
+            // Custom title bar (hidden when fullscreen)
+            customTitleBar = createCustomTitleBar();
+            customTitleBar.setManaged(false);
+            customTitleBar.setVisible(false);
+            
+            // Content container
             rootContainer = new StackPane();
             rootContainer.setStyle("-fx-background-color: transparent;");
             
-            // Get screen size for adaptive layout
+            // Stack title bar on top
+            mainContainer.getChildren().addAll(rootContainer, customTitleBar);
+            StackPane.setAlignment(customTitleBar, Pos.TOP_RIGHT);
+            
+            // Get screen size
             javafx.stage.Screen screen = javafx.stage.Screen.getPrimary();
             double screenWidth = screen.getBounds().getWidth();
             double screenHeight = screen.getBounds().getHeight();
             
-            mainScene = new Scene(rootContainer, screenWidth, screenHeight);
+            mainScene = new Scene(mainContainer, screenWidth, screenHeight);
             
             // Load CSS
             String cssPath = "/css/style.css";
@@ -63,41 +82,42 @@ public class MainApp extends Application {
                 System.out.println("✅ CSS loaded");
             }
             
-            // Set scene SEKALI SAJA! (tidak akan pernah diganti lagi!)
+            // Setup stage
             primaryStage.setScene(mainScene);
             primaryStage.setTitle("Sistem Inventaris & Peminjaman Ruangan");
-            
-            // Disable fullscreen exit hint
             primaryStage.setFullScreenExitHint("");
             
             // Setup fullscreen toggle
             setupFullscreenToggle();
             
-            // Setup fullscreen event listener
+            // Fullscreen listener - show/hide custom controls
             primaryStage.fullScreenProperty().addListener((obs, wasFullScreen, isNowFullScreen) -> {
                 isFullscreen = isNowFullScreen;
+                customTitleBar.setVisible(!isNowFullScreen);
+                customTitleBar.setManaged(!isNowFullScreen);
+                
                 if (isNowFullScreen) {
                     System.out.println("🖥️  Fullscreen Mode: ON");
                 } else {
-                    System.out.println("🖥️  Fullscreen Mode: OFF");
+                    System.out.println("🖥️  Fullscreen Mode: OFF - Controls visible");
                 }
             });
             
             System.out.println("\n[3/4] Loading initial content...");
-            // Load konten pertama (User Login)
             showUserLogin();
             
             System.out.println("\n[4/4] Showing stage...");
             primaryStage.show();
             
-            // START IN FULLSCREEN BY DEFAULT
+            // Start in fullscreen
             primaryStage.setFullScreen(true);
             isFullscreen = true;
-            System.out.println("🖥️  Starting in FULLSCREEN mode (default)");
+            System.out.println("🖥️  Starting in FULLSCREEN mode");
             
             System.out.println("\n✅ Application started successfully!");
-            System.out.println("⚡ Using SINGLE SCENE architecture (Zero Flicker!)");
-            System.out.println("📌 Tekan F11 atau ESC untuk toggle fullscreen");
+            System.out.println("⚡ Single Scene Architecture (Zero Flicker!)");
+            System.out.println("📌 F11 atau ESC: Toggle fullscreen");
+            System.out.println("📌 Window controls muncul ketika keluar fullscreen");
             System.out.println("========================================\n");
             
         } catch (Exception e) {
@@ -111,17 +131,115 @@ public class MainApp extends Application {
     }
     
     /**
-     * Setup fullscreen toggle dengan F11 dan ESC
+     * Create custom title bar dengan window controls
+     */
+    private HBox createCustomTitleBar() {
+        HBox titleBar = new HBox(0);
+        titleBar.setStyle(
+            "-fx-background-color: rgba(0, 0, 0, 0.7);" +
+            "-fx-padding: 5 10 5 10;" +
+            "-fx-background-radius: 5;"
+        );
+        titleBar.setAlignment(Pos.CENTER_RIGHT);
+        titleBar.setPrefHeight(40);
+        titleBar.setMaxWidth(200);
+        
+        // Minimize button
+        Button btnMinimize = new Button("—");
+        styleWindowButton(btnMinimize, "#F1C40F");
+        btnMinimize.setOnAction(e -> primaryStage.setIconified(true));
+        
+        // Maximize/Restore button
+        Button btnMaximize = new Button("□");
+        styleWindowButton(btnMaximize, "#2ECC71");
+        btnMaximize.setOnAction(e -> {
+            if (primaryStage.isMaximized()) {
+                primaryStage.setMaximized(false);
+                btnMaximize.setText("□");
+            } else {
+                primaryStage.setMaximized(true);
+                btnMaximize.setText("❐");
+            }
+        });
+        
+        // Close button
+        Button btnClose = new Button("✕");
+        styleWindowButton(btnClose, "#E74C3C");
+        btnClose.setOnAction(e -> handleClose());
+        
+        titleBar.getChildren().addAll(btnMinimize, btnMaximize, btnClose);
+        
+        return titleBar;
+    }
+    
+    /**
+     * Style untuk window control buttons
+     */
+    private void styleWindowButton(Button button, String hoverColor) {
+        button.setStyle(
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 16px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-padding: 5 15 5 15;" +
+            "-fx-cursor: hand;" +
+            "-fx-background-radius: 3;"
+        );
+        
+        button.setOnMouseEntered(e -> 
+            button.setStyle(
+                "-fx-background-color: " + hoverColor + ";" +
+                "-fx-text-fill: white;" +
+                "-fx-font-size: 16px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-padding: 5 15 5 15;" +
+                "-fx-cursor: hand;" +
+                "-fx-background-radius: 3;"
+            )
+        );
+        
+        button.setOnMouseExited(e -> 
+            button.setStyle(
+                "-fx-background-color: transparent;" +
+                "-fx-text-fill: white;" +
+                "-fx-font-size: 16px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-padding: 5 15 5 15;" +
+                "-fx-cursor: hand;" +
+                "-fx-background-radius: 3;"
+            )
+        );
+    }
+    
+    /**
+     * Handle close dengan konfirmasi
+     */
+    private void handleClose() {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Konfirmasi Keluar");
+        confirm.setHeaderText("Keluar dari Aplikasi");
+        confirm.setContentText("Yakin ingin keluar dari aplikasi?");
+        
+        if (confirm.showAndWait().get() == ButtonType.OK) {
+            DatabaseConnection.closeConnection();
+            System.out.println("\n👋 Application closed by user.");
+            primaryStage.close();
+            System.exit(0);
+        }
+    }
+    
+    /**
+     * Setup fullscreen toggle
      */
     private static void setupFullscreenToggle() {
         if (mainScene != null) {
-            // F11 untuk toggle fullscreen
+            // F11 untuk toggle
             mainScene.getAccelerators().put(
                 new KeyCodeCombination(KeyCode.F11),
                 () -> toggleFullscreen()
             );
             
-            // ESC untuk keluar dari fullscreen
+            // ESC untuk keluar fullscreen
             mainScene.setOnKeyPressed(event -> {
                 if (event.getCode() == KeyCode.ESCAPE && isFullscreen) {
                     toggleFullscreen();
@@ -132,20 +250,20 @@ public class MainApp extends Application {
     }
     
     /**
-     * Toggle fullscreen mode
+     * Toggle fullscreen
      */
     public static void toggleFullscreen() {
         isFullscreen = !isFullscreen;
         primaryStage.setFullScreen(isFullscreen);
         
         if (isFullscreen) {
-            System.out.println("🖥️  Fullscreen toggled: ON");
+            System.out.println("🖥️  Fullscreen: ON");
         } else {
-            System.out.println("🖥️  Fullscreen toggled: OFF");
+            System.out.println("🖥️  Fullscreen: OFF (Controls visible)");
         }
     }
     
-    // ========== ADMIN SCENES ==========
+    // ========== SCENE NAVIGATION METHODS ==========
     
     public static void showLoginScene() {
         loadContent("/fxml/Login.fxml", "Login Admin");
@@ -162,11 +280,10 @@ public class MainApp extends Application {
     public static void showPeminjamanScene() {
         loadContent("/fxml/DataPeminjaman.fxml", "Data Peminjaman");
     }
+    
     public static void showLaporanTransaksi() {
         loadContent("/fxml/LaporanTransaksi.fxml", "Laporan Transaksi");
     }
-    
-    // ========== USER SCENES ==========
     
     public static void showUserLogin() {
         loadContent("/fxml/UserLogin.fxml", "Login User");
@@ -200,62 +317,38 @@ public class MainApp extends Application {
         loadContent("/fxml/UserProfile.fxml", "Profile User");
     }
     
-    // ========== REVOLUTIONARY METHOD: Load Content Instead of Scene! ==========
-    
     /**
-     * Load FXML content dan replace di rootContainer
-     * INI YANG BIKIN ZERO FLICKER! ⚡
+     * Load content (Zero Flicker!)
      */
     private static void loadContent(String fxmlPath, String title) {
         try {
-            System.out.println("\n📄 Loading content: " + fxmlPath);
+            System.out.println("\n📄 Loading: " + fxmlPath);
             
-            // Check if file exists
             if (MainApp.class.getResource(fxmlPath) == null) {
-                throw new Exception("FXML file not found: " + fxmlPath);
+                throw new Exception("FXML not found: " + fxmlPath);
             }
-            System.out.println("   ✅ FXML file found");
             
-            // Load FXML
             FXMLLoader loader = new FXMLLoader(MainApp.class.getResource(fxmlPath));
             Parent content = loader.load();
-            System.out.println("   ✅ Content loaded successfully");
             
-            // [MAGIC HAPPENS HERE] Ganti content, BUKAN scene!
-            // Ini yang bikin instant & zero flicker! ⚡⚡⚡
             rootContainer.getChildren().setAll(content);
             
-            // Make content fill the container
             if (content instanceof javafx.scene.layout.Region) {
                 javafx.scene.layout.Region region = (javafx.scene.layout.Region) content;
                 region.setPrefWidth(javafx.stage.Screen.getPrimary().getBounds().getWidth());
                 region.setPrefHeight(javafx.stage.Screen.getPrimary().getBounds().getHeight());
             }
             
-            // Update title
             primaryStage.setTitle(title);
-            
-            System.out.println("   ⚡ Content swapped instantly (zero flicker!)");
-            System.out.println("   ✅ Page loaded: " + title);
+            System.out.println("   ✅ Loaded: " + title);
             
         } catch (Exception e) {
-            System.err.println("\n❌ ERROR loading content: " + fxmlPath);
+            System.err.println("\n❌ ERROR loading: " + fxmlPath);
             e.printStackTrace();
-            
-            showErrorDialog("Content Load Error", 
-                "Gagal memuat halaman: " + title + "\n\n" +
-                "File: " + fxmlPath + "\n" +
-                "Error: " + e.getMessage() + "\n\n" +
-                "Periksa:\n" +
-                "1. File FXML ada di folder resources/fxml/\n" +
-                "2. File sudah di-compile (ada di bin/fxml/)\n" +
-                "3. Controller class sudah ada dan benar");
+            showErrorDialog("Load Error", "Gagal memuat: " + title);
         }
     }
     
-    /**
-     * Show error dialog
-     */
     private static void showErrorDialog(String title, String message) {
         try {
             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -276,7 +369,6 @@ public class MainApp extends Application {
     
     public static void main(String[] args) {
         System.out.println("\n🚀 Starting Sistem Inventaris & Peminjaman Ruangan...");
-        System.out.println("⚡ Single Scene Architecture - Zero Flicker Mode!\n");
         launch(args);
     }
 }
