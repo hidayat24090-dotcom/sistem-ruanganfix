@@ -316,6 +316,10 @@ public class MainApp extends Application {
     public static void showUserProfile() {
         loadContent("/fxml/UserProfile.fxml", "Profile User");
     }
+
+    public static void showApprovalPeminjaman() {
+        loadContent("/fxml/ApprovalPeminjaman.fxml", "Persetujuan Peminjaman");
+    }
     
     /**
      * Load content (Zero Flicker!)

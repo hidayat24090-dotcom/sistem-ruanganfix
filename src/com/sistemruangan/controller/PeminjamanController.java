@@ -9,42 +9,12 @@ import java.sql.*;
 import java.time.LocalDate;
 
 /**
- * Controller untuk operasi CRUD Peminjaman (FIXED VERSION)
+ * Controller untuk operasi CRUD Peminjaman - WITH APPROVAL SYSTEM
  */
 public class PeminjamanController {
-    private static final String SQL_SELECT_ALL = "SELECT p.*, r.nama_ruangan FROM peminjaman p JOIN ruangan r ON p.id_ruangan = r.id ORDER BY p.id DESC";
-    private static final String SQL_INSERT = "INSERT INTO peminjaman (id_ruangan, nama_peminjam, keperluan, tanggal_pinjam, tanggal_kembali, status_peminjaman) VALUES (?, ?, ?, ?, ?, ?)";
-    private static final String SQL_UPDATE = "UPDATE peminjaman SET id_ruangan=?, nama_peminjam=?, keperluan=?, tanggal_pinjam=?, tanggal_kembali=?, status_peminjaman=? WHERE id=?";
-    private static final String SQL_SEARCH = "SELECT p.*, r.nama_ruangan FROM peminjaman p JOIN ruangan r ON p.id_ruangan = r.id WHERE p.nama_peminjam LIKE ? OR r.nama_ruangan LIKE ? ORDER BY p.id DESC";
-
-    private RuanganController ruanganController = new RuanganController();
     
     /**
-     * Mengambil semua data peminjaman dari database dengan join ke tabel ruangan
-     */
-    public ObservableList<Peminjaman> getAllPeminjaman() {
-        ObservableList<Peminjaman> peminjamanList = FXCollections.observableArrayList();
-        
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(SQL_SELECT_ALL)) {
-            
-            while (rs.next()) {
-                Peminjaman peminjaman = createPeminjamanFromResultSet(rs);
-                if (peminjaman != null) {
-                    peminjamanList.add(peminjaman);
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Error mengambil data peminjaman: " + e.getMessage());
-            e.printStackTrace();
-        }
-        
-        return peminjamanList;
-    }
-    
-    /**
-     * Menambah peminjaman baru dan mengubah status ruangan (FIXED)
+     * Tambah peminjaman baru (dengan approval untuk non-kuliah)
      */
     public boolean tambahPeminjaman(Peminjaman peminjaman) {
         if (!validatePeminjaman(peminjaman)) {
@@ -58,7 +28,7 @@ public class PeminjamanController {
         try {
             conn = DatabaseConnection.getConnection();
             
-            // Cek apakah ruangan masih tersedia
+            // Cek ruangan tersedia
             String checkQuery = "SELECT status FROM ruangan WHERE id = ?";
             try (PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
                 checkStmt.setInt(1, peminjaman.getIdRuangan());
@@ -67,7 +37,7 @@ public class PeminjamanController {
                 if (rs.next()) {
                     String currentStatus = rs.getString("status");
                     if (!"tersedia".equalsIgnoreCase(currentStatus)) {
-                        System.err.println("Ruangan tidak tersedia untuk dipinjam");
+                        System.err.println("Ruangan tidak tersedia");
                         return false;
                     }
                 } else {
@@ -76,28 +46,44 @@ public class PeminjamanController {
                 }
             }
             
-            // Mulai transaksi
             conn.setAutoCommit(false);
             
-            // Insert peminjaman
-            pstmt = conn.prepareStatement(SQL_INSERT);
-            setPeminjamanParameters(pstmt, peminjaman);
+            // Tentukan status approval
+            String statusApproval = peminjaman.isKuliah() ? "approved" : "pending";
+            
+            // Insert peminjaman dengan approval
+            String query = "INSERT INTO peminjaman (id_ruangan, nama_peminjam, keperluan, " +
+                          "jenis_kegiatan, penjelasan_kegiatan, surat_path, " +
+                          "tanggal_pinjam, tanggal_kembali, status_peminjaman, status_approval) " +
+                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            pstmt = conn.prepareStatement(query);
+            pstmt.setInt(1, peminjaman.getIdRuangan());
+            pstmt.setString(2, peminjaman.getNamaPeminjam());
+            pstmt.setString(3, peminjaman.getKeperluan());
+            pstmt.setString(4, peminjaman.getJenisKegiatan());
+            pstmt.setString(5, peminjaman.getPenjelasanKegiatan());
+            pstmt.setString(6, peminjaman.getSuratPath());
+            pstmt.setDate(7, Date.valueOf(peminjaman.getTanggalPinjam()));
+            pstmt.setDate(8, Date.valueOf(peminjaman.getTanggalKembali()));
+            pstmt.setString(9, peminjaman.getStatusPeminjaman());
+            pstmt.setString(10, statusApproval);
             
             int rowsAffected = pstmt.executeUpdate();
             
             if (rowsAffected > 0) {
-                // Update status ruangan
-                String updateQuery = "UPDATE ruangan SET status = 'dipinjam' WHERE id = ?";
-                try (PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
-                    updateStmt.setInt(1, peminjaman.getIdRuangan());
-                    int updateRows = updateStmt.executeUpdate();
-                    
-                    if (updateRows > 0) {
-                        conn.commit();
-                        System.out.println("Peminjaman berhasil ditambahkan");
-                        return true;
+                // Hanya update status ruangan jika kegiatan kuliah (langsung approved)
+                if (peminjaman.isKuliah()) {
+                    String updateQuery = "UPDATE ruangan SET status = 'dipinjam' WHERE id = ?";
+                    try (PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
+                        updateStmt.setInt(1, peminjaman.getIdRuangan());
+                        updateStmt.executeUpdate();
                     }
                 }
+                
+                conn.commit();
+                System.out.println("Peminjaman berhasil ditambahkan (Status: " + statusApproval + ")");
+                return true;
             }
             
             conn.rollback();
@@ -115,9 +101,7 @@ public class PeminjamanController {
         } finally {
             try {
                 if (pstmt != null) pstmt.close();
-                if (conn != null) {
-                    conn.setAutoCommit(true);
-                }
+                if (conn != null) conn.setAutoCommit(true);
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -125,60 +109,187 @@ public class PeminjamanController {
     }
     
     /**
-     * Update data peminjaman
+     * Get pending approvals (untuk admin)
      */
-    public boolean updatePeminjaman(Peminjaman peminjaman) {
-        if (!validatePeminjaman(peminjaman)) {
-            System.err.println("Data peminjaman tidak valid");
-            return false;
-        }
-
+    public ObservableList<Peminjaman> getPendingApprovals() {
+        ObservableList<Peminjaman> pendingList = FXCollections.observableArrayList();
+        String query = "SELECT p.*, r.nama_ruangan FROM peminjaman p " +
+                      "JOIN ruangan r ON p.id_ruangan = r.id " +
+                      "WHERE p.status_approval = 'pending' " +
+                      "ORDER BY p.created_at DESC";
+        
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(SQL_UPDATE)) {
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
             
-            setPeminjamanParameters(pstmt, peminjaman);
-            pstmt.setInt(7, peminjaman.getId());
-            
-            int rowsAffected = pstmt.executeUpdate();
-            return rowsAffected > 0;
-            
+            while (rs.next()) {
+                Peminjaman peminjaman = createPeminjamanFromResultSet(rs);
+                pendingList.add(peminjaman);
+            }
         } catch (SQLException e) {
-            System.err.println("Error update peminjaman: " + e.getMessage());
+            System.err.println("Error mengambil pending approvals: " + e.getMessage());
             e.printStackTrace();
-            return false;
         }
+        
+        return pendingList;
     }
     
     /**
-     * Menyelesaikan peminjaman dan mengubah status ruangan kembali tersedia
+     * Get jumlah pending approvals
      */
-    public boolean selesaikanPeminjaman(int idPeminjaman, int idRuangan) {
-        return updateStatusPeminjaman(idPeminjaman, idRuangan, "selesai");
-    }
-    
-    /**
-     * Membatalkan peminjaman dan mengubah status ruangan kembali tersedia
-     */
-    public boolean batalkanPeminjaman(int idPeminjaman, int idRuangan) {
-        return updateStatusPeminjaman(idPeminjaman, idRuangan, "batal");
-    }
-    
-    /**
-     * Update status peminjaman (helper method)
-     */
-    private boolean updateStatusPeminjaman(int idPeminjaman, int idRuangan, String newStatus) {
-        if (idPeminjaman <= 0 || idRuangan <= 0) {
-            System.err.println("ID tidak valid");
-            return false;
+    public int getPendingApprovalsCount() {
+        String query = "SELECT COUNT(*) as total FROM peminjaman WHERE status_approval = 'pending'";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+            
+            if (rs.next()) {
+                return rs.getInt("total");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error menghitung pending approvals: " + e.getMessage());
         }
-
+        
+        return 0;
+    }
+    
+    /**
+     * Approve peminjaman
+     */
+    public boolean approvePeminjaman(int idPeminjaman, int idRuangan, String approvedBy, String keterangan) {
         Connection conn = null;
         
         try {
             conn = DatabaseConnection.getConnection();
             conn.setAutoCommit(false);
             
-            // Update status peminjaman
+            // Update status approval
+            String updateQuery = "UPDATE peminjaman SET status_approval = 'approved', " +
+                               "keterangan_approval = ?, approved_by = ?, approved_at = NOW() " +
+                               "WHERE id = ?";
+            
+            try (PreparedStatement pstmt = conn.prepareStatement(updateQuery)) {
+                pstmt.setString(1, keterangan);
+                pstmt.setString(2, approvedBy);
+                pstmt.setInt(3, idPeminjaman);
+                
+                int rowsAffected = pstmt.executeUpdate();
+                
+                if (rowsAffected > 0) {
+                    // Update status ruangan jadi dipinjam
+                    String updateRuangan = "UPDATE ruangan SET status = 'dipinjam' WHERE id = ?";
+                    try (PreparedStatement updateStmt = conn.prepareStatement(updateRuangan)) {
+                        updateStmt.setInt(1, idRuangan);
+                        updateStmt.executeUpdate();
+                    }
+                    
+                    conn.commit();
+                    System.out.println("Peminjaman approved by: " + approvedBy);
+                    return true;
+                }
+            }
+            
+            conn.rollback();
+            return false;
+            
+        } catch (SQLException e) {
+            try {
+                if (conn != null) conn.rollback();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            System.err.println("Error approve peminjaman: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } finally {
+            try {
+                if (conn != null) conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    /**
+     * Reject peminjaman
+     */
+    public boolean rejectPeminjaman(int idPeminjaman, String approvedBy, String keterangan) {
+        String query = "UPDATE peminjaman SET status_approval = 'rejected', " +
+                      "keterangan_approval = ?, approved_by = ?, approved_at = NOW() " +
+                      "WHERE id = ?";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            
+            pstmt.setString(1, keterangan);
+            pstmt.setString(2, approvedBy);
+            pstmt.setInt(3, idPeminjaman);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                System.out.println("Peminjaman rejected by: " + approvedBy);
+                return true;
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Error reject peminjaman: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Get semua peminjaman
+     */
+    public ObservableList<Peminjaman> getAllPeminjaman() {
+        ObservableList<Peminjaman> peminjamanList = FXCollections.observableArrayList();
+        String query = "SELECT p.*, r.nama_ruangan FROM peminjaman p " +
+                      "JOIN ruangan r ON p.id_ruangan = r.id " +
+                      "ORDER BY p.id DESC";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+            
+            while (rs.next()) {
+                Peminjaman peminjaman = createPeminjamanFromResultSet(rs);
+                peminjamanList.add(peminjaman);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error mengambil data peminjaman: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return peminjamanList;
+    }
+    
+    /**
+     * Selesaikan peminjaman
+     */
+    public boolean selesaikanPeminjaman(int idPeminjaman, int idRuangan) {
+        return updateStatusPeminjaman(idPeminjaman, idRuangan, "selesai");
+    }
+    
+    /**
+     * Batalkan peminjaman
+     */
+    public boolean batalkanPeminjaman(int idPeminjaman, int idRuangan) {
+        return updateStatusPeminjaman(idPeminjaman, idRuangan, "batal");
+    }
+    
+    /**
+     * Update status peminjaman
+     */
+    private boolean updateStatusPeminjaman(int idPeminjaman, int idRuangan, String newStatus) {
+        Connection conn = null;
+        
+        try {
+            conn = DatabaseConnection.getConnection();
+            conn.setAutoCommit(false);
+            
             String updatePeminjamanQuery = "UPDATE peminjaman SET status_peminjaman=? WHERE id=?";
             try (PreparedStatement pstmt = conn.prepareStatement(updatePeminjamanQuery)) {
                 pstmt.setString(1, newStatus);
@@ -187,17 +298,14 @@ public class PeminjamanController {
                 int rowsAffected = pstmt.executeUpdate();
                 
                 if (rowsAffected > 0) {
-                    // Update status ruangan
                     String updateRuanganQuery = "UPDATE ruangan SET status='tersedia' WHERE id=?";
                     try (PreparedStatement updateStmt = conn.prepareStatement(updateRuanganQuery)) {
                         updateStmt.setInt(1, idRuangan);
-                        int updateRows = updateStmt.executeUpdate();
-                        
-                        if (updateRows > 0) {
-                            conn.commit();
-                            return true;
-                        }
+                        updateStmt.executeUpdate();
                     }
+                    
+                    conn.commit();
+                    return true;
                 }
             }
             
@@ -211,13 +319,10 @@ public class PeminjamanController {
                 ex.printStackTrace();
             }
             System.err.println("Error mengubah status peminjaman: " + e.getMessage());
-            e.printStackTrace();
             return false;
         } finally {
             try {
-                if (conn != null) {
-                    conn.setAutoCommit(true);
-                }
+                if (conn != null) conn.setAutoCommit(true);
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -225,32 +330,7 @@ public class PeminjamanController {
     }
     
     /**
-     * Menghapus peminjaman
-     */
-    public boolean deletePeminjaman(int id) {
-        if (id <= 0) {
-            System.err.println("ID peminjaman tidak valid");
-            return false;
-        }
-
-        String query = "DELETE FROM peminjaman WHERE id=?";
-        
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-            
-            pstmt.setInt(1, id);
-            int rowsAffected = pstmt.executeUpdate();
-            return rowsAffected > 0;
-            
-        } catch (SQLException e) {
-            System.err.println("Error hapus peminjaman: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-    
-    /**
-     * Mencari peminjaman berdasarkan nama peminjam atau nama ruangan
+     * Search peminjaman
      */
     public ObservableList<Peminjaman> searchPeminjaman(String keyword) {
         ObservableList<Peminjaman> peminjamanList = FXCollections.observableArrayList();
@@ -259,8 +339,13 @@ public class PeminjamanController {
             return getAllPeminjaman();
         }
         
+        String query = "SELECT p.*, r.nama_ruangan FROM peminjaman p " +
+                      "JOIN ruangan r ON p.id_ruangan = r.id " +
+                      "WHERE p.nama_peminjam LIKE ? OR r.nama_ruangan LIKE ? " +
+                      "ORDER BY p.id DESC";
+        
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(SQL_SEARCH)) {
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
             
             String searchKeyword = "%" + keyword.trim() + "%";
             pstmt.setString(1, searchKeyword);
@@ -269,21 +354,18 @@ public class PeminjamanController {
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     Peminjaman peminjaman = createPeminjamanFromResultSet(rs);
-                    if (peminjaman != null) {
-                        peminjamanList.add(peminjaman);
-                    }
+                    peminjamanList.add(peminjaman);
                 }
             }
         } catch (SQLException e) {
             System.err.println("Error mencari peminjaman: " + e.getMessage());
-            e.printStackTrace();
         }
         
         return peminjamanList;
     }
     
     /**
-     * Mendapatkan peminjaman berdasarkan bulan dan tahun
+     * Get peminjaman by month
      */
     public ObservableList<Peminjaman> getPeminjamanByMonth(int month, int year) {
         ObservableList<Peminjaman> peminjamanList = FXCollections.observableArrayList();
@@ -301,64 +383,67 @@ public class PeminjamanController {
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     Peminjaman peminjaman = createPeminjamanFromResultSet(rs);
-                    if (peminjaman != null) {
-                        peminjamanList.add(peminjaman);
-                    }
+                    peminjamanList.add(peminjaman);
                 }
             }
         } catch (SQLException e) {
             System.err.println("Error mengambil peminjaman bulanan: " + e.getMessage());
-            e.printStackTrace();
         }
         
         return peminjamanList;
     }
-
+    
     /**
-     * Membuat objek Peminjaman dari ResultSet
+     * Create Peminjaman from ResultSet
      */
     private Peminjaman createPeminjamanFromResultSet(ResultSet rs) throws SQLException {
-        return new Peminjaman(
+        Peminjaman p = new Peminjaman(
             rs.getInt("id"),
             rs.getInt("id_ruangan"),
             rs.getString("nama_ruangan"),
             rs.getString("nama_peminjam"),
             rs.getString("keperluan"),
+            rs.getString("jenis_kegiatan") != null ? rs.getString("jenis_kegiatan") : "kuliah",
+            rs.getString("penjelasan_kegiatan"),
+            rs.getString("surat_path"),
             rs.getDate("tanggal_pinjam").toLocalDate(),
             rs.getDate("tanggal_kembali").toLocalDate(),
-            rs.getString("status_peminjaman")
+            rs.getString("status_peminjaman"),
+            rs.getString("status_approval") != null ? rs.getString("status_approval") : "approved"
         );
+        
+        // Set additional approval info if exists
+        String keterangan = rs.getString("keterangan_approval");
+        if (keterangan != null) {
+            p.setKeteranganApproval(keterangan);
+        }
+        
+        String approvedBy = rs.getString("approved_by");
+        if (approvedBy != null) {
+            p.setApprovedBy(approvedBy);
+        }
+        
+        Timestamp approvedAt = rs.getTimestamp("approved_at");
+        if (approvedAt != null) {
+            p.setApprovedAt(approvedAt.toLocalDateTime());
+        }
+        
+        return p;
     }
-
+    
     /**
-     * Set parameter PreparedStatement untuk Peminjaman
-     */
-    private void setPeminjamanParameters(PreparedStatement pstmt, Peminjaman peminjaman) throws SQLException {
-        pstmt.setInt(1, peminjaman.getIdRuangan());
-        pstmt.setString(2, peminjaman.getNamaPeminjam());
-        pstmt.setString(3, peminjaman.getKeperluan());
-        pstmt.setDate(4, Date.valueOf(peminjaman.getTanggalPinjam()));
-        pstmt.setDate(5, Date.valueOf(peminjaman.getTanggalKembali()));
-        pstmt.setString(6, peminjaman.getStatusPeminjaman());
-    }
-
-    /**
-     * Validasi data Peminjaman
+     * Validasi peminjaman
      */
     private boolean validatePeminjaman(Peminjaman peminjaman) {
-        if (peminjaman == null) {
-            return false;
-        }
-
+        if (peminjaman == null) return false;
+        
         if (peminjaman.getIdRuangan() <= 0 || 
             peminjaman.getNamaPeminjam() == null || peminjaman.getNamaPeminjam().trim().isEmpty() ||
             peminjaman.getKeperluan() == null || peminjaman.getKeperluan().trim().isEmpty() ||
-            peminjaman.getTanggalPinjam() == null || peminjaman.getTanggalKembali() == null ||
-            peminjaman.getStatusPeminjaman() == null || peminjaman.getStatusPeminjaman().trim().isEmpty()) {
+            peminjaman.getTanggalPinjam() == null || peminjaman.getTanggalKembali() == null) {
             return false;
         }
-
-        // Validasi tanggal pinjam harus sebelum atau sama dengan tanggal kembali
+        
         return !peminjaman.getTanggalPinjam().isAfter(peminjaman.getTanggalKembali());
     }
 }

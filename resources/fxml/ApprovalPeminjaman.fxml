@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane prefHeight="750.0" prefWidth="1200.0" styleClass="root-pane" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sistemruangan.view.ApprovalPeminjamanController">
+   <children>
+      <ScrollPane fitToWidth="true" fitToHeight="true" style="-fx-background-color: transparent;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <content>
+            <VBox spacing="15.0" style="-fx-padding: 20;">
+               <children>
+                  <!-- Header -->
+                  <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: linear-gradient(to right, #f093fb, #f5576c); -fx-padding: 20; -fx-background-radius: 12;">
+                     <children>
+                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                           <children>
+                              <Label text="✅ Persetujuan Peminjaman" style="-fx-text-fill: white;">
+                                 <font>
+                                    <Font name="System Bold" size="26.0" />
+                                 </font>
+                              </Label>
+                              <Label text="Kelola persetujuan peminjaman ruangan untuk kegiatan non-kuliah" style="-fx-text-fill: rgba(255,255,255,0.9);">
+                                 <font>
+                                    <Font size="14.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                        </VBox>
+                        <Button fx:id="btnKembali" mnemonicParsing="false" onAction="#handleKembali" text="← Kembali" style="-fx-background-color: rgba(255,255,255,0.2); -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 25; -fx-background-radius: 8; -fx-border-color: white; -fx-border-width: 2; -fx-border-radius: 8;">
+                           <font>
+                              <Font size="13.0" />
+                           </font>
+                        </Button>
+                     </children>
+                  </HBox>
+                  
+                  <Separator />
+                  
+                  <!-- Summary Cards -->
+                  <HBox spacing="20.0">
+                     <children>
+                        <VBox alignment="CENTER" spacing="5.0" style="-fx-background-color: linear-gradient(to bottom right, #f093fb, #f5576c); -fx-padding: 20; -fx-background-radius: 12; -fx-pref-width: 200;" HBox.hgrow="ALWAYS">
+                           <children>
+                              <Label text="⏳" style="-fx-font-size: 32px; -fx-text-fill: white;" />
+                              <Label text="Menunggu" style="-fx-text-fill: white; -fx-font-size: 12px;" />
+                              <Label fx:id="lblPending" text="0" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 36px;" />
+                           </children>
+                        </VBox>
+                        
+                        <VBox alignment="CENTER" spacing="5.0" style="-fx-background-color: linear-gradient(to bottom right, #43e97b, #38f9d7); -fx-padding: 20; -fx-background-radius: 12; -fx-pref-width: 200;" HBox.hgrow="ALWAYS">
+                           <children>
+                              <Label text="✅" style="-fx-font-size: 32px; -fx-text-fill: white;" />
+                              <Label text="Disetujui" style="-fx-text-fill: white; -fx-font-size: 12px;" />
+                              <Label fx:id="lblApproved" text="0" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 36px;" />
+                           </children>
+                        </VBox>
+                        
+                        <VBox alignment="CENTER" spacing="5.0" style="-fx-background-color: linear-gradient(to bottom right, #ED6A5A, #f5576c); -fx-padding: 20; -fx-background-radius: 12; -fx-pref-width: 200;" HBox.hgrow="ALWAYS">
+                           <children>
+                              <Label text="❌" style="-fx-font-size: 32px; -fx-text-fill: white;" />
+                              <Label text="Ditolak" style="-fx-text-fill: white; -fx-font-size: 12px;" />
+                              <Label fx:id="lblRejected" text="0" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 36px;" />
+                           </children>
+                        </VBox>
+                     </children>
+                  </HBox>
+                  
+                  <!-- Filter Section -->
+                  <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);">
+                     <children>
+                        <Label text="Filter:">
+                           <font>
+                              <Font name="System Bold" size="13.0" />
+                           </font>
+                        </Label>
+                        
+                        <ComboBox fx:id="cbFilter" onAction="#handleFilter" prefWidth="150.0" styleClass="combo-box" />
+                        
+                        <Region HBox.hgrow="ALWAYS" />
+                        
+                        <TextField fx:id="txtSearch" onKeyReleased="#handleSearch" prefWidth="300.0" promptText="🔍 Cari peminjaman..." styleClass="text-field" />
+                        
+                        <Button fx:id="btnRefresh" mnemonicParsing="false" onAction="#handleRefresh" styleClass="secondary-button" text="🔄 Refresh" />
+                     </children>
+                  </HBox>
+                  
+                  <!-- Table Section -->
+                  <VBox spacing="10.0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);">
+                     <children>
+                        <Label text="📋 Daftar Pengajuan">
+                           <font>
+                              <Font name="System Bold" size="16.0" />
+                           </font>
+                        </Label>
+                        
+                        <TableView fx:id="tablePeminjaman" styleClass="table-view" prefHeight="400.0">
+                           <columns>
+                              <TableColumn fx:id="colTanggal" prefWidth="100.0" text="Tgl Ajuan" />
+                              <TableColumn fx:id="colPeminjam" prefWidth="150.0" text="Peminjam" />
+                              <TableColumn fx:id="colRuangan" prefWidth="150.0" text="Ruangan" />
+                              <TableColumn fx:id="colKeperluan" prefWidth="180.0" text="Keperluan" />
+                              <TableColumn fx:id="colTglPinjam" prefWidth="100.0" text="Tgl Pinjam" />
+                              <TableColumn fx:id="colTglKembali" prefWidth="100.0" text="Tgl Kembali" />
+                              <TableColumn fx:id="colStatus" prefWidth="120.0" text="Status" />
+                              <TableColumn fx:id="colAksi" prefWidth="200.0" text="Aksi" />
+                           </columns>
+                        </TableView>
+                     </children>
+                  </VBox>
+                  
+                  <Region prefHeight="20.0" />
+               </children>
+            </VBox>
+         </content>
+      </ScrollPane>
+   </children>
+</AnchorPane>
