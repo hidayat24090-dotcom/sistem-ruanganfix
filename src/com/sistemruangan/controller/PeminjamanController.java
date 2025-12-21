@@ -242,24 +242,88 @@ public class PeminjamanController {
     }
     
     /**
-     * Get semua peminjaman
+     * Get semua peminjaman - FIXED dengan handle NULL values
      */
     public ObservableList<Peminjaman> getAllPeminjaman() {
         ObservableList<Peminjaman> peminjamanList = FXCollections.observableArrayList();
         String query = "SELECT p.*, r.nama_ruangan FROM peminjaman p " +
-                      "JOIN ruangan r ON p.id_ruangan = r.id " +
-                      "ORDER BY p.id DESC";
+                    "JOIN ruangan r ON p.id_ruangan = r.id " +
+                    "ORDER BY p.id DESC";
         
         try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(query)) {
             
             while (rs.next()) {
-                Peminjaman peminjaman = createPeminjamanFromResultSet(rs);
-                peminjamanList.add(peminjaman);
+                try {
+                    // Get jenis_kegiatan dengan default 'kuliah' jika NULL
+                    String jenisKegiatan = rs.getString("jenis_kegiatan");
+                    if (jenisKegiatan == null || jenisKegiatan.trim().isEmpty()) {
+                        jenisKegiatan = "kuliah";
+                    }
+                    
+                    // Get status_approval dengan default 'approved' jika NULL
+                    String statusApproval = rs.getString("status_approval");
+                    if (statusApproval == null || statusApproval.trim().isEmpty()) {
+                        statusApproval = "approved";
+                    }
+                    
+                    // Get penjelasan_kegiatan (boleh NULL)
+                    String penjelasanKegiatan = rs.getString("penjelasan_kegiatan");
+                    if (penjelasanKegiatan == null) {
+                        penjelasanKegiatan = "";
+                    }
+                    
+                    // Get surat_path (boleh NULL)
+                    String suratPath = rs.getString("surat_path");
+                    if (suratPath == null) {
+                        suratPath = "";
+                    }
+                    
+                    // Create Peminjaman object
+                    Peminjaman p = new Peminjaman(
+                        rs.getInt("id"),
+                        rs.getInt("id_ruangan"),
+                        rs.getString("nama_ruangan"),
+                        rs.getString("nama_peminjam"),
+                        rs.getString("keperluan"),
+                        jenisKegiatan,
+                        penjelasanKegiatan,
+                        suratPath,
+                        rs.getDate("tanggal_pinjam").toLocalDate(),
+                        rs.getDate("tanggal_kembali").toLocalDate(),
+                        rs.getString("status_peminjaman"),
+                        statusApproval
+                    );
+                    
+                    // Set additional approval info if exists
+                    String keterangan = rs.getString("keterangan_approval");
+                    if (keterangan != null) {
+                        p.setKeteranganApproval(keterangan);
+                    }
+                    
+                    String approvedBy = rs.getString("approved_by");
+                    if (approvedBy != null) {
+                        p.setApprovedBy(approvedBy);
+                    }
+                    
+                    Timestamp approvedAt = rs.getTimestamp("approved_at");
+                    if (approvedAt != null) {
+                        p.setApprovedAt(approvedAt.toLocalDateTime());
+                    }
+                    
+                    peminjamanList.add(p);
+                    
+                } catch (Exception e) {
+                    System.err.println("❌ Error parsing row: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
+            
+            System.out.println("✅ Loaded " + peminjamanList.size() + " peminjaman records");
+            
         } catch (SQLException e) {
-            System.err.println("Error mengambil data peminjaman: " + e.getMessage());
+            System.err.println("❌ Error mengambil data peminjaman: " + e.getMessage());
             e.printStackTrace();
         }
         

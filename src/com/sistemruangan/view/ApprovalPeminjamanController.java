@@ -222,35 +222,64 @@ public class ApprovalPeminjamanController {
             }
         });
     }
-    
-/**
-     * Load data peminjaman non-kuliah
+
+    /**
+     * Load data peminjaman non-kuliah - FIXED VERSION
      */
     private void loadData() {
         try {
             System.out.println("📋 Loading approval data...");
             
-            // Get all peminjaman yang jenis_kegiatan = 'non_kuliah'
+            // Get all peminjaman
             allData = peminjamanController.getAllPeminjaman();
             
-            // Filter only non-kuliah
-            ObservableList<Peminjaman> nonKuliahList = javafx.collections.FXCollections.observableArrayList();
+            if (allData == null) {
+                System.err.println("❌ allData is NULL!");
+                showError("Gagal memuat data: Data peminjaman tidak ditemukan");
+                return;
+            }
+            
+            System.out.println("✅ Got " + allData.size() + " total peminjaman");
+            
+            // Filter only lainnya
+            ObservableList<Peminjaman> lainnyanList = javafx.collections.FXCollections.observableArrayList();
+            
             for (Peminjaman p : allData) {
-                if ("non_kuliah".equalsIgnoreCase(p.getJenisKegiatan())) {
-                    nonKuliahList.add(p);
+                System.out.println("  - ID: " + p.getId() + 
+                                ", Jenis: " + p.getJenisKegiatan() + 
+                                ", Status: " + p.getStatusApproval());
+                
+                // Check if jenis_kegiatan is 'lainnya' (case insensitive)
+                String jenis = p.getJenisKegiatan();
+                if (jenis != null && "lainnya".equalsIgnoreCase(jenis.trim())) {
+                    lainnyanList.add(p);
+                    System.out.println("    ✅ Added to lainnya list");
                 }
             }
             
-            filteredData = new FilteredList<>(nonKuliahList, p -> true);
+            System.out.println("✅ Found " + lainnyanList.size() + " 'lainnya' peminjaman");
+            
+            // Create filtered list
+            filteredData = new FilteredList<>(lainnyanList, p -> true);
             tablePeminjaman.setItems(filteredData);
             
+            // Update summary
             updateSummary();
             
-            System.out.println("✅ Loaded " + nonKuliahList.size() + " non-kuliah requests");
+            // Show message if no data
+            if (lainnyanList.isEmpty()) {
+                System.out.println("ℹ️ No 'lainnya' peminjaman found yet");
+                lblPending.setText("0");
+                lblApproved.setText("0");
+                lblRejected.setText("0");
+            }
+            
+            System.out.println("✅ Data loaded successfully");
             
         } catch (Exception e) {
             System.err.println("❌ ERROR loading data: " + e.getMessage());
             e.printStackTrace();
+            showError("Error loading data: " + e.getMessage());
         }
     }
     
