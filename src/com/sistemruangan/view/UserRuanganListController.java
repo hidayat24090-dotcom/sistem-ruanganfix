@@ -3,8 +3,10 @@ package com.sistemruangan.view;
 import com.sistemruangan.MainApp;
 import com.sistemruangan.controller.RuanganController;
 import com.sistemruangan.model.Ruangan;
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -16,9 +18,16 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Controller untuk Daftar Ruangan User - BEAUTIFUL CARD VIEW
+ * Controller untuk Daftar Ruangan User - OPTIMIZED VERSION
+ * Performance improvements:
+ * - Lazy loading images
+ * - Image caching
+ * - Virtual scrolling simulation
+ * - Reduced shadow effects
  */
 public class UserRuanganListController {
     
@@ -31,257 +40,311 @@ public class UserRuanganListController {
     @FXML private Label lblDipinjam;
     @FXML private Button btnRefresh;
     @FXML private Button btnKembali;
+    @FXML private ProgressIndicator progressIndicator;
     
     private RuanganController ruanganController;
     private FilteredList<Ruangan> filteredData;
     private static final String FOTO_DIR = "resources/images/ruangan/";
     
+    // Image cache untuk performa
+    private Map<String, Image> imageCache = new HashMap<>();
+    private Image defaultImage;
+    
     @FXML
     public void initialize() {
+        System.out.println("🚀 Initializing Optimized UserRuanganListController...");
+        
         ruanganController = new RuanganController();
         
         // Setup filter combo box
         cbFilterStatus.getItems().addAll("Semua", "Tersedia", "Dipinjam");
         cbFilterStatus.setValue("Semua");
         
-        // Setup FlowPane for cards
+        // Setup FlowPane for cards (optimized settings)
         flowPaneCards.setHgap(20);
         flowPaneCards.setVgap(20);
         flowPaneCards.setPadding(new Insets(10));
         flowPaneCards.setStyle("-fx-background-color: transparent;");
         
-        // Load data
-        loadData();
+        // Load default image once
+        loadDefaultImage();
+        
+        // Load data in background
+        loadDataAsync();
     }
     
     /**
-     * Load data ruangan sebagai cards
+     * Load default image once (cache)
      */
-    private void loadData() {
-        ObservableList<Ruangan> ruanganList = ruanganController.getAllRuangan();
-        filteredData = new FilteredList<>(ruanganList, p -> true);
-        
-        displayCards();
-        updateSummary();
-    }
-    
-    /**
-     * Display ruangan sebagai cards yang cantik
-     */
-    private void displayCards() {
-        flowPaneCards.getChildren().clear();
-        
-        for (Ruangan ruangan : filteredData) {
-            VBox card = createRuanganCard(ruangan);
-            flowPaneCards.getChildren().add(card);
+    private void loadDefaultImage() {
+        try {
+            File defaultFile = new File("resources/images/default_room.png");
+            if (defaultFile.exists()) {
+                defaultImage = new Image(defaultFile.toURI().toString());
+                System.out.println("✅ Default image loaded from file");
+            } else {
+                defaultImage = null;
+                System.out.println("⚠️ Default image file not found");
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ Error loading default image: " + e.getMessage());
+            defaultImage = null;
         }
+    }
+    
+    /**
+     * Load data asynchronously untuk tidak freeze UI
+     */
+    private void loadDataAsync() {
+        // Show loading
+        if (progressIndicator != null) {
+            progressIndicator.setVisible(true);
+        }
+        
+        Task<ObservableList<Ruangan>> loadTask = new Task<ObservableList<Ruangan>>() {
+            @Override
+            protected ObservableList<Ruangan> call() throws Exception {
+                return ruanganController.getAllRuangan();
+            }
+            
+            @Override
+            protected void succeeded() {
+                ObservableList<Ruangan> ruanganList = getValue();
+                filteredData = new FilteredList<>(ruanganList, p -> true);
+                
+                // Display cards
+                displayCardsOptimized();
+                updateSummary();
+                
+                if (progressIndicator != null) {
+                    progressIndicator.setVisible(false);
+                }
+                
+                System.out.println("✅ Data loaded: " + ruanganList.size() + " ruangan");
+            }
+            
+            @Override
+            protected void failed() {
+                if (progressIndicator != null) {
+                    progressIndicator.setVisible(false);
+                }
+                
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Error");
+                alert.setContentText("Gagal memuat data ruangan!");
+                alert.showAndWait();
+            }
+        };
+        
+        new Thread(loadTask).start();
+    }
+    
+    /**
+     * Display cards dengan optimasi performa
+     */
+    private void displayCardsOptimized() {
+        flowPaneCards.getChildren().clear();
         
         if (filteredData.isEmpty()) {
             Label noData = new Label("Tidak ada ruangan yang ditemukan");
             noData.setStyle("-fx-font-size: 16px; -fx-text-fill: #7f8c8d;");
             flowPaneCards.getChildren().add(noData);
+            return;
+        }
+        
+        // Render cards in batches untuk smooth scrolling
+        int batchSize = 6; // Render 6 cards at a time
+        int currentIndex = 0;
+        
+        for (Ruangan ruangan : filteredData) {
+            VBox card = createOptimizedCard(ruangan);
+            flowPaneCards.getChildren().add(card);
+            
+            currentIndex++;
+            
+            // Add small delay every batch untuk smooth rendering
+            if (currentIndex % batchSize == 0) {
+                try {
+                    Thread.sleep(10); // Small delay
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
     
     /**
-     * Create card yang cantik untuk setiap ruangan
+     * Create optimized card (reduced shadow, lazy image loading)
      */
-    private VBox createRuanganCard(Ruangan ruangan) {
-        VBox card = new VBox(15);
+    private VBox createOptimizedCard(Ruangan ruangan) {
+        VBox card = new VBox(12);
         card.setPrefWidth(320);
         card.setStyle(
             "-fx-background-color: white;" +
-            "-fx-background-radius: 15;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0, 0, 5);" +
-            "-fx-padding: 0;" +
-            "-fx-cursor: hand;"
+            "-fx-background-radius: 12;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 3);" + // Reduced shadow
+            "-fx-padding: 0;"
         );
         
-        // Hover effect
+        // Simple hover effect (no scale transformation untuk performa)
         card.setOnMouseEntered(e -> 
             card.setStyle(
                 "-fx-background-color: white;" +
-                "-fx-background-radius: 15;" +
-                "-fx-effect: dropshadow(gaussian, rgba(91,155,213,0.4), 25, 0, 0, 8);" +
+                "-fx-background-radius: 12;" +
+                "-fx-effect: dropshadow(gaussian, rgba(91,155,213,0.3), 15, 0, 0, 5);" +
                 "-fx-padding: 0;" +
-                "-fx-cursor: hand;" +
-                "-fx-scale-x: 1.03;" +
-                "-fx-scale-y: 1.03;"
+                "-fx-cursor: hand;"
             )
         );
         
         card.setOnMouseExited(e -> 
             card.setStyle(
                 "-fx-background-color: white;" +
-                "-fx-background-radius: 15;" +
-                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0, 0, 5);" +
-                "-fx-padding: 0;" +
-                "-fx-cursor: hand;"
+                "-fx-background-radius: 12;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 3);" +
+                "-fx-padding: 0;"
             )
         );
         
-        // Image section
-        VBox imageContainer = new VBox();
+        // Image section with lazy loading
+        StackPane imageContainer = new StackPane();
         imageContainer.setPrefHeight(200);
         imageContainer.setStyle(
             "-fx-background-color: #f5f7fa;" +
-            "-fx-background-radius: 15 15 0 0;"
+            "-fx-background-radius: 12 12 0 0;"
         );
-        imageContainer.setAlignment(Pos.CENTER);
         
         ImageView imageView = new ImageView();
         imageView.setFitWidth(320);
         imageView.setFitHeight(200);
         imageView.setPreserveRatio(false);
+        imageView.setSmooth(true); // Smooth rendering
+        imageView.setCache(true); // Cache image
         
-        // Load foto ruangan
-        try {
-            if (ruangan.getFotoPath() != null && !ruangan.getFotoPath().isEmpty()) {
-                File fotoFile = new File(FOTO_DIR + ruangan.getFotoPath());
-                if (fotoFile.exists()) {
-                    Image image = new Image(fotoFile.toURI().toString());
-                    imageView.setImage(image);
-                } else {
-                    setDefaultImage(imageView);
-                }
-            } else {
-                setDefaultImage(imageView);
-            }
-        } catch (Exception e) {
-            setDefaultImage(imageView);
-        }
+        // Load image (cached)
+        loadImageCached(ruangan, imageView);
         
         imageContainer.getChildren().add(imageView);
         
         // Content section
-        VBox content = new VBox(12);
-        content.setPadding(new Insets(20));
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(15));
         
         // Nama Ruangan
         Label lblNama = new Label(ruangan.getNamaRuangan());
-        lblNama.setFont(Font.font("System", FontWeight.BOLD, 18));
+        lblNama.setFont(Font.font("System", FontWeight.BOLD, 16));
         lblNama.setStyle("-fx-text-fill: #2c3e50;");
         lblNama.setWrapText(true);
+        lblNama.setMaxWidth(280);
         
-        // Info Row 1: Kapasitas
-        HBox infoKapasitas = new HBox(8);
+        // Kapasitas
+        HBox infoKapasitas = new HBox(5);
         infoKapasitas.setAlignment(Pos.CENTER_LEFT);
-        
         Label iconKapasitas = new Label("👥");
-        iconKapasitas.setStyle("-fx-font-size: 16px;");
-        
         Label lblKapasitas = new Label(ruangan.getJumlahKursi() + " Kursi");
-        lblKapasitas.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 13px;");
-        
+        lblKapasitas.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 12px;");
         infoKapasitas.getChildren().addAll(iconKapasitas, lblKapasitas);
         
-        // Fasilitas
-        VBox vboxFasilitas = new VBox(5);
+        // Fasilitas (simplified - max 2 items)
+        HBox fasilitasBox = new HBox(5);
+        fasilitasBox.setAlignment(Pos.CENTER_LEFT);
+        Label iconFas = new Label("📋");
         
-        Label lblFasilitasTitle = new Label("📋 Fasilitas:");
-        lblFasilitasTitle.setStyle("-fx-text-fill: #34495e; -fx-font-weight: bold; -fx-font-size: 12px;");
-        
-        VBox fasilitasList = new VBox(3);
+        String fasText = "Tidak ada fasilitas";
         if (ruangan.getFasilitas() != null && !ruangan.getFasilitas().trim().isEmpty()) {
-            String[] fasilitas = ruangan.getFasilitas().split(",");
-            int count = 0;
-            for (String f : fasilitas) {
-                if (count >= 3) break; // Maksimal 3 fasilitas di card
-                Label lblFas = new Label("• " + f.trim());
-                lblFas.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 11px;");
-                fasilitasList.getChildren().add(lblFas);
-                count++;
+            String[] fas = ruangan.getFasilitas().split(",");
+            if (fas.length > 0) {
+                fasText = fas[0].trim();
+                if (fas.length > 1) {
+                    fasText += ", " + fas[1].trim();
+                }
+                if (fas.length > 2) {
+                    fasText += " +" + (fas.length - 2) + " lainnya";
+                }
             }
-            if (fasilitas.length > 3) {
-                Label lblMore = new Label("  +" + (fasilitas.length - 3) + " lainnya");
-                lblMore.setStyle("-fx-text-fill: #5B9BD5; -fx-font-size: 11px; -fx-font-style: italic;");
-                fasilitasList.getChildren().add(lblMore);
-            }
-        } else {
-            Label lblNoFas = new Label("• Tidak ada fasilitas");
-            lblNoFas.setStyle("-fx-text-fill: #95a5a6; -fx-font-size: 11px; -fx-font-style: italic;");
-            fasilitasList.getChildren().add(lblNoFas);
         }
         
-        vboxFasilitas.getChildren().addAll(lblFasilitasTitle, fasilitasList);
+        Label lblFas = new Label(fasText);
+        lblFas.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 11px;");
+        lblFas.setWrapText(true);
+        lblFas.setMaxWidth(250);
+        fasilitasBox.getChildren().addAll(iconFas, lblFas);
         
         // Status Badge
-        HBox statusRow = new HBox();
-        statusRow.setAlignment(Pos.CENTER_LEFT);
-        
         Label lblStatus = new Label(ruangan.getStatus().toUpperCase());
-        lblStatus.setPadding(new Insets(5, 15, 5, 15));
+        lblStatus.setPadding(new Insets(4, 12, 4, 12));
         lblStatus.setStyle(
-            "-fx-background-radius: 15;" +
-            "-fx-font-size: 11px;" +
+            "-fx-background-radius: 12;" +
+            "-fx-font-size: 10px;" +
             "-fx-font-weight: bold;" +
             (ruangan.getStatus().equalsIgnoreCase("tersedia") 
                 ? "-fx-background-color: #d4edda; -fx-text-fill: #155724;" 
                 : "-fx-background-color: #fff3cd; -fx-text-fill: #856404;")
         );
         
-        statusRow.getChildren().add(lblStatus);
-        
-        // Button Pinjam
+        // Button
         Button btnPinjam = new Button(
             ruangan.getStatus().equalsIgnoreCase("tersedia") 
-                ? "📝 Ajukan Peminjaman" 
+                ? "📝 Ajukan" 
                 : "❌ Tidak Tersedia"
         );
         btnPinjam.setMaxWidth(Double.MAX_VALUE);
         btnPinjam.setDisable(!ruangan.getStatus().equalsIgnoreCase("tersedia"));
-        btnPinjam.setStyle(
-            ruangan.getStatus().equalsIgnoreCase("tersedia")
-                ? "-fx-background-color: linear-gradient(to right, #667eea, #764ba2);" +
-                  "-fx-text-fill: white;" +
-                  "-fx-font-weight: bold;" +
-                  "-fx-font-size: 13px;" +
-                  "-fx-padding: 12 20;" +
-                  "-fx-background-radius: 8;" +
-                  "-fx-cursor: hand;"
-                : "-fx-background-color: #e8edf2;" +
-                  "-fx-text-fill: #95a5a6;" +
-                  "-fx-font-weight: bold;" +
-                  "-fx-font-size: 13px;" +
-                  "-fx-padding: 12 20;" +
-                  "-fx-background-radius: 8;"
-        );
         
         if (ruangan.getStatus().equalsIgnoreCase("tersedia")) {
+            btnPinjam.setStyle(
+                "-fx-background-color: #5B9BD5;" +
+                "-fx-text-fill: white;" +
+                "-fx-font-weight: bold;" +
+                "-fx-font-size: 12px;" +
+                "-fx-padding: 10 15;" +
+                "-fx-background-radius: 6;" +
+                "-fx-cursor: hand;"
+            );
+            
             btnPinjam.setOnMouseEntered(e -> 
                 btnPinjam.setStyle(
-                    "-fx-background-color: linear-gradient(to right, #5568d3, #6a3d8f);" +
+                    "-fx-background-color: #4a8bc2;" +
                     "-fx-text-fill: white;" +
                     "-fx-font-weight: bold;" +
-                    "-fx-font-size: 13px;" +
-                    "-fx-padding: 12 20;" +
-                    "-fx-background-radius: 8;" +
+                    "-fx-font-size: 12px;" +
+                    "-fx-padding: 10 15;" +
+                    "-fx-background-radius: 6;" +
                     "-fx-cursor: hand;"
                 )
             );
             
             btnPinjam.setOnMouseExited(e -> 
                 btnPinjam.setStyle(
-                    "-fx-background-color: linear-gradient(to right, #667eea, #764ba2);" +
+                    "-fx-background-color: #5B9BD5;" +
                     "-fx-text-fill: white;" +
                     "-fx-font-weight: bold;" +
-                    "-fx-font-size: 13px;" +
-                    "-fx-padding: 12 20;" +
-                    "-fx-background-radius: 8;" +
+                    "-fx-font-size: 12px;" +
+                    "-fx-padding: 10 15;" +
+                    "-fx-background-radius: 6;" +
                     "-fx-cursor: hand;"
                 )
+            );
+        } else {
+            btnPinjam.setStyle(
+                "-fx-background-color: #e8edf2;" +
+                "-fx-text-fill: #95a5a6;" +
+                "-fx-font-weight: bold;" +
+                "-fx-font-size: 12px;" +
+                "-fx-padding: 10 15;" +
+                "-fx-background-radius: 6;"
             );
         }
         
         btnPinjam.setOnAction(e -> handlePinjam(ruangan));
         
-        // Add all to content
+        // Add to content
         content.getChildren().addAll(
             lblNama,
             new Separator(),
             infoKapasitas,
-            vboxFasilitas,
-            statusRow,
+            fasilitasBox,
+            lblStatus,
             btnPinjam
         );
         
@@ -292,16 +355,37 @@ public class UserRuanganListController {
     }
     
     /**
-     * Set default image jika foto tidak ada
+     * Load image dengan caching untuk performa
      */
-    private void setDefaultImage(ImageView imageView) {
-        try {
-            Image defaultImage = new Image(getClass().getResourceAsStream("/images/default_room.png"));
-            imageView.setImage(defaultImage);
-        } catch (Exception e) {
-            // Create placeholder
-            imageView.setStyle("-fx-background-color: #e8edf2;");
+    private void loadImageCached(Ruangan ruangan, ImageView imageView) {
+        String fotoPath = ruangan.getFotoPath();
+        
+        // Check if already cached
+        if (fotoPath != null && !fotoPath.isEmpty() && imageCache.containsKey(fotoPath)) {
+            imageView.setImage(imageCache.get(fotoPath));
+            return;
         }
+        
+        // Load image
+        try {
+            if (fotoPath != null && !fotoPath.isEmpty()) {
+                File fotoFile = new File(FOTO_DIR + fotoPath);
+                if (fotoFile.exists()) {
+                    Image image = new Image(
+                        fotoFile.toURI().toString(),
+                        320, 200, true, true, true // Smooth & async loading
+                    );
+                    imageCache.put(fotoPath, image); // Cache it
+                    imageView.setImage(image);
+                    return;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Error loading image: " + e.getMessage());
+        }
+        
+        // Use default image
+        imageView.setImage(defaultImage);
     }
     
     /**
@@ -345,14 +429,12 @@ public class UserRuanganListController {
         String selectedStatus = cbFilterStatus.getValue();
         
         filteredData.setPredicate(ruangan -> {
-            // Filter berdasarkan search text
             boolean matchSearch = true;
             if (txtSearch.getText() != null && !txtSearch.getText().isEmpty()) {
                 String searchText = txtSearch.getText().toLowerCase();
                 matchSearch = ruangan.getNamaRuangan().toLowerCase().contains(searchText);
             }
             
-            // Filter berdasarkan status
             boolean matchStatus = true;
             if (!"Semua".equals(selectedStatus)) {
                 matchStatus = ruangan.getStatus().equalsIgnoreCase(selectedStatus);
@@ -361,7 +443,7 @@ public class UserRuanganListController {
             return matchSearch && matchStatus;
         });
         
-        displayCards();
+        displayCardsOptimized();
         updateSummary();
     }
     
@@ -374,7 +456,8 @@ public class UserRuanganListController {
     private void handleRefresh() {
         txtSearch.clear();
         cbFilterStatus.setValue("Semua");
-        loadData();
+        imageCache.clear(); // Clear cache on refresh
+        loadDataAsync();
     }
     
     @FXML

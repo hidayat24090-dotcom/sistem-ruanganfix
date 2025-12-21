@@ -6,246 +6,266 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<AnchorPane prefHeight="750.0" prefWidth="1200.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sistemruangan.view.LaporanTransaksiController">
+<AnchorPane prefHeight="800.0" prefWidth="1300.0" style="-fx-background-color: #f5f7fa;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sistemruangan.view.LaporanTransaksiController">
    <children>
-      <ScrollPane fitToWidth="true" style="-fx-background-color: white; -fx-background: white;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-         <content>
-            <VBox spacing="20.0" style="-fx-background-color: white;">
-               <children>
-                  <!-- Header -->
-                  <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: #f8f9fa; -fx-padding: 20; -fx-background-radius: 10;">
+      <StackPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;">
+               <content>
+                  <VBox spacing="20.0" style="-fx-background-color: transparent;">
                      <children>
-                        <VBox>
+                        <!-- Header -->
+                        <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 3);">
                            <children>
-                              <Label text="📊 Laporan Transaksi &amp; Statistik">
-                                 <font>
-                                    <Font name="System Bold" size="24.0" />
-                                 </font>
-                              </Label>
-                              <Label fx:id="lblPeriode" text="Periode: Semua Waktu">
-                                 <font>
-                                    <Font size="13.0" />
-                                 </font>
-                              </Label>
-                           </children>
-                        </VBox>
-                        <Region HBox.hgrow="ALWAYS" />
-                        <Button fx:id="btnExportPDF" mnemonicParsing="false" onAction="#handleExportPDF" styleClass="success-button" text="📄 Export PDF">
-                           <font>
-                              <Font name="System Bold" size="13.0" />
-                           </font>
-                        </Button>
-                        <Button fx:id="btnRefresh" mnemonicParsing="false" onAction="#handleRefresh" styleClass="secondary-button" text="🔄 Refresh" />
-                        <Button fx:id="btnKembali" mnemonicParsing="false" onAction="#handleKembali" styleClass="secondary-button" text="← Kembali" />
-                     </children>
-                  </HBox>
-                  
-                  <!-- Summary Cards -->
-                  <GridPane hgap="15.0" vgap="15.0">
-                     <children>
-                        <!-- Card 1: Total Ruangan -->
-                        <VBox alignment="CENTER" spacing="10.0" style="-fx-background-color: linear-gradient(to bottom right, #667eea, #764ba2); -fx-padding: 25; -fx-background-radius: 15;" GridPane.columnIndex="0" GridPane.rowIndex="0">
-                           <children>
-                              <Label text="🏢" textFill="WHITE">
-                                 <font>
-                                    <Font size="32.0" />
-                                 </font>
-                              </Label>
-                              <Label text="Total Ruangan" textFill="WHITE">
-                                 <font>
-                                    <Font name="System Bold" size="13.0" />
-                                 </font>
-                              </Label>
-                              <Label fx:id="lblTotalRuangan" text="0" textFill="WHITE">
-                                 <font>
-                                    <Font name="System Bold" size="36.0" />
-                                 </font>
-                              </Label>
-                              <Label fx:id="lblRuanganTersedia" text="0 Tersedia" textFill="#E3F2FD">
-                                 <font>
-                                    <Font size="11.0" />
-                                 </font>
-                              </Label>
-                           </children>
-                        </VBox>
-                        
-                        <!-- Card 2: Total Peminjaman -->
-                        <VBox alignment="CENTER" spacing="10.0" style="-fx-background-color: linear-gradient(to bottom right, #f093fb, #f5576c); -fx-padding: 25; -fx-background-radius: 15;" GridPane.columnIndex="1" GridPane.rowIndex="0">
-                           <children>
-                              <Label text="📝" textFill="WHITE">
-                                 <font>
-                                    <Font size="32.0" />
-                                 </font>
-                              </Label>
-                              <Label text="Total Peminjaman" textFill="WHITE">
-                                 <font>
-                                    <Font name="System Bold" size="13.0" />
-                                 </font>
-                              </Label>
-                              <Label fx:id="lblTotalPeminjaman" text="0" textFill="WHITE">
-                                 <font>
-                                    <Font name="System Bold" size="36.0" />
-                                 </font>
-                              </Label>
-                              <Label text="Semua Status" textFill="#FFE0E0">
-                                 <font>
-                                    <Font size="11.0" />
-                                 </font>
-                              </Label>
-                           </children>
-                        </VBox>
-                        
-                        <!-- Card 3: Peminjaman Aktif -->
-                        <VBox alignment="CENTER" spacing="10.0" style="-fx-background-color: linear-gradient(to bottom right, #4facfe, #00f2fe); -fx-padding: 25; -fx-background-radius: 15;" GridPane.columnIndex="2" GridPane.rowIndex="0">
-                           <children>
-                              <Label text="⚡" textFill="WHITE">
-                                 <font>
-                                    <Font size="32.0" />
-                                 </font>
-                              </Label>
-                              <Label text="Peminjaman Aktif" textFill="WHITE">
-                                 <font>
-                                    <Font name="System Bold" size="13.0" />
-                                 </font>
-                              </Label>
-                              <Label fx:id="lblPeminjamanAktif" text="0" textFill="WHITE">
-                                 <font>
-                                    <Font name="System Bold" size="36.0" />
-                                 </font>
-                              </Label>
-                              <Label text="Sedang Berlangsung" textFill="#E0F7FA">
-                                 <font>
-                                    <Font size="11.0" />
-                                 </font>
-                              </Label>
-                           </children>
-                        </VBox>
-                        
-                        <!-- Card 4: Peminjaman Selesai -->
-                        <VBox alignment="CENTER" spacing="10.0" style="-fx-background-color: linear-gradient(to bottom right, #43e97b, #38f9d7); -fx-padding: 25; -fx-background-radius: 15;" GridPane.columnIndex="3" GridPane.rowIndex="0">
-                           <children>
-                              <Label text="✅" textFill="WHITE">
-                                 <font>
-                                    <Font size="32.0" />
-                                 </font>
-                              </Label>
-                              <Label text="Peminjaman Selesai" textFill="WHITE">
-                                 <font>
-                                    <Font name="System Bold" size="13.0" />
-                                 </font>
-                              </Label>
-                              <Label fx:id="lblPeminjamanSelesai" text="0" textFill="WHITE">
-                                 <font>
-                                    <Font name="System Bold" size="36.0" />
-                                 </font>
-                              </Label>
-                              <Label text="Berhasil Dikembalikan" textFill="#E0FFF0">
-                                 <font>
-                                    <Font size="11.0" />
-                                 </font>
-                              </Label>
-                           </children>
-                        </VBox>
-                     </children>
-                     <columnConstraints>
-                        <ColumnConstraints hgrow="SOMETIMES" minWidth="250.0" prefWidth="280.0" />
-                        <ColumnConstraints hgrow="SOMETIMES" minWidth="250.0" prefWidth="280.0" />
-                        <ColumnConstraints hgrow="SOMETIMES" minWidth="250.0" prefWidth="280.0" />
-                        <ColumnConstraints hgrow="SOMETIMES" minWidth="250.0" prefWidth="280.0" />
-                     </columnConstraints>
-                     <rowConstraints>
-                        <RowConstraints minHeight="140.0" prefHeight="150.0" vgrow="SOMETIMES" />
-                     </rowConstraints>
-                  </GridPane>
-                  
-                  <!-- Charts Section -->
-                  <HBox spacing="20.0">
-                     <children>
-                        <!-- Bar Chart -->
-                        <VBox spacing="10.0" style="-fx-background-color: #f8f9fa; -fx-padding: 20; -fx-background-radius: 12;" HBox.hgrow="ALWAYS">
-                           <children>
-                              <Label text="📊 Statistik Peminjaman per Ruangan">
-                                 <font>
-                                    <Font name="System Bold" size="15.0" />
-                                 </font>
-                              </Label>
-                              <BarChart fx:id="chartRuangan" animated="false" legendVisible="true" prefHeight="300.0" style="-fx-background-color: white; -fx-background-radius: 8;" VBox.vgrow="ALWAYS">
-                                 <xAxis>
-                                    <CategoryAxis label="Ruangan" side="BOTTOM" />
-                                 </xAxis>
-                                 <yAxis>
-                                    <NumberAxis label="Jumlah" side="LEFT" />
-                                 </yAxis>
-                              </BarChart>
-                           </children>
-                        </VBox>
-                        
-                        <!-- Pie Chart -->
-                        <VBox spacing="10.0" style="-fx-background-color: #f8f9fa; -fx-padding: 20; -fx-background-radius: 12;">
-                           <children>
-                              <Label text="🥧 Status Peminjaman">
-                                 <font>
-                                    <Font name="System Bold" size="15.0" />
-                                 </font>
-                              </Label>
-                              <PieChart fx:id="chartStatus" animated="false" legendVisible="true" prefHeight="300.0" prefWidth="380.0" style="-fx-background-color: white; -fx-background-radius: 8;" VBox.vgrow="ALWAYS" />
-                           </children>
-                        </VBox>
-                     </children>
-                  </HBox>
-                  
-                  <!-- Table: Detail Statistik - FIXED VERSION -->
-                  <VBox spacing="10.0" style="-fx-background-color: #f8f9fa; -fx-padding: 20; -fx-background-radius: 12;">
-                     <children>
-                        <HBox alignment="CENTER_LEFT" spacing="10.0">
-                           <children>
-                              <Label text="📋 Detail Statistik per Ruangan">
-                                 <font>
-                                    <Font name="System Bold" size="15.0" />
-                                 </font>
-                              </Label>
+                              <VBox>
+                                 <children>
+                                    <Label text="📊 Laporan Statistik &amp; Analisis">
+                                       <font>
+                                          <Font name="System Bold" size="24.0" />
+                                       </font>
+                                    </Label>
+                                    <Label fx:id="lblPeriode" text="Periode: Semua Waktu">
+                                       <font>
+                                          <Font size="13.0" />
+                                       </font>
+                                    </Label>
+                                 </children>
+                              </VBox>
                               <Region HBox.hgrow="ALWAYS" />
-                              <TextField fx:id="txtSearch" onKeyReleased="#handleSearch" prefWidth="300.0" promptText="🔍 Cari ruangan..." styleClass="text-field" />
+                              <Button fx:id="btnExportPDF" mnemonicParsing="false" onAction="#handleExportPDF" styleClass="success-button" text="📄 Export PDF" />
+                              <Button fx:id="btnRefresh" mnemonicParsing="false" onAction="#handleRefresh" styleClass="secondary-button" text="🔄 Refresh" />
+                              <Button fx:id="btnKembali" mnemonicParsing="false" onAction="#handleKembali" styleClass="secondary-button" text="← Kembali" />
                            </children>
                         </HBox>
                         
-                        <!-- FIXED TABLE - Proper Column Constraints -->
-                        <TableView fx:id="tableStatistik" prefHeight="280.0" style="-fx-background-color: white; -fx-background-radius: 8;">
-                           <columns>
-                              <TableColumn fx:id="colRuangan" minWidth="200.0" prefWidth="250.0" text="Nama Ruangan" />
-                              <TableColumn fx:id="colTotalPeminjaman" minWidth="100.0" prefWidth="150.0" text="Total Peminjaman" />
-                              <TableColumn fx:id="colAktif" minWidth="80.0" prefWidth="120.0" text="Aktif" />
-                              <TableColumn fx:id="colSelesai" minWidth="80.0" prefWidth="120.0" text="Selesai" />
-                              <TableColumn fx:id="colBatal" minWidth="80.0" prefWidth="120.0" text="Batal" />
-                              <TableColumn fx:id="colPersentase" minWidth="100.0" prefWidth="140.0" text="Persentase" />
-                           </columns>
-                           <columnResizePolicy>
-                              <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                           </columnResizePolicy>
-                        </TableView>
-                     </children>
-                  </VBox>
-                  
-                  <!-- Top 5 Ruangan Populer -->
-                  <VBox spacing="10.0" style="-fx-background-color: #f8f9fa; -fx-padding: 20; -fx-background-radius: 12;">
-                     <children>
-                        <Label text="🏆 Top 5 Ruangan Paling Populer">
-                           <font>
-                              <Font name="System Bold" size="15.0" />
-                           </font>
-                        </Label>
+                        <!-- Summary Cards -->
+                        <GridPane hgap="15.0" vgap="15.0">
+                           <children>
+                              <VBox alignment="CENTER" spacing="10.0" style="-fx-background-color: linear-gradient(to bottom right, #667eea, #764ba2); -fx-padding: 25; -fx-background-radius: 12;" GridPane.columnIndex="0">
+                                 <children>
+                                    <Label text="🏢" textFill="WHITE">
+                                       <font>
+                                          <Font size="32.0" />
+                                       </font>
+                                    </Label>
+                                    <Label text="Total Ruangan" textFill="WHITE">
+                                       <font>
+                                          <Font name="System Bold" size="13.0" />
+                                       </font>
+                                    </Label>
+                                    <Label fx:id="lblTotalRuangan" text="0" textFill="WHITE">
+                                       <font>
+                                          <Font name="System Bold" size="36.0" />
+                                       </font>
+                                    </Label>
+                                    <Label fx:id="lblRuanganTersedia" text="0 Tersedia" textFill="#E3F2FD">
+                                       <font>
+                                          <Font size="11.0" />
+                                       </font>
+                                    </Label>
+                                 </children>
+                              </VBox>
+                              
+                              <VBox alignment="CENTER" spacing="10.0" style="-fx-background-color: linear-gradient(to bottom right, #f093fb, #f5576c); -fx-padding: 25; -fx-background-radius: 12;" GridPane.columnIndex="1">
+                                 <children>
+                                    <Label text="📝" textFill="WHITE">
+                                       <font>
+                                          <Font size="32.0" />
+                                       </font>
+                                    </Label>
+                                    <Label text="Total Peminjaman" textFill="WHITE">
+                                       <font>
+                                          <Font name="System Bold" size="13.0" />
+                                       </font>
+                                    </Label>
+                                    <Label fx:id="lblTotalPeminjaman" text="0" textFill="WHITE">
+                                       <font>
+                                          <Font name="System Bold" size="36.0" />
+                                       </font>
+                                    </Label>
+                                    <Label text="Semua Status" textFill="#FFE0E0">
+                                       <font>
+                                          <Font size="11.0" />
+                                       </font>
+                                    </Label>
+                                 </children>
+                              </VBox>
+                              
+                              <VBox alignment="CENTER" spacing="10.0" style="-fx-background-color: linear-gradient(to bottom right, #4facfe, #00f2fe); -fx-padding: 25; -fx-background-radius: 12;" GridPane.columnIndex="2">
+                                 <children>
+                                    <Label text="⚡" textFill="WHITE">
+                                       <font>
+                                          <Font size="32.0" />
+                                       </font>
+                                    </Label>
+                                    <Label text="Aktif" textFill="WHITE">
+                                       <font>
+                                          <Font name="System Bold" size="13.0" />
+                                       </font>
+                                    </Label>
+                                    <Label fx:id="lblPeminjamanAktif" text="0" textFill="WHITE">
+                                       <font>
+                                          <Font name="System Bold" size="36.0" />
+                                       </font>
+                                    </Label>
+                                    <Label text="Berlangsung" textFill="#E0F7FA">
+                                       <font>
+                                          <Font size="11.0" />
+                                       </font>
+                                    </Label>
+                                 </children>
+                              </VBox>
+                              
+                              <VBox alignment="CENTER" spacing="10.0" style="-fx-background-color: linear-gradient(to bottom right, #43e97b, #38f9d7); -fx-padding: 25; -fx-background-radius: 12;" GridPane.columnIndex="3">
+                                 <children>
+                                    <Label text="✅" textFill="WHITE">
+                                       <font>
+                                          <Font size="32.0" />
+                                       </font>
+                                    </Label>
+                                    <Label text="Selesai" textFill="WHITE">
+                                       <font>
+                                          <Font name="System Bold" size="13.0" />
+                                       </font>
+                                    </Label>
+                                    <Label fx:id="lblPeminjamanSelesai" text="0" textFill="WHITE">
+                                       <font>
+                                          <Font name="System Bold" size="36.0" />
+                                       </font>
+                                    </Label>
+                                    <Label text="Dikembalikan" textFill="#E0FFF0">
+                                       <font>
+                                          <Font size="11.0" />
+                                       </font>
+                                    </Label>
+                                 </children>
+                              </VBox>
+                           </children>
+                           <columnConstraints>
+                              <ColumnConstraints hgrow="SOMETIMES" minWidth="280.0" />
+                              <ColumnConstraints hgrow="SOMETIMES" minWidth="280.0" />
+                              <ColumnConstraints hgrow="SOMETIMES" minWidth="280.0" />
+                              <ColumnConstraints hgrow="SOMETIMES" minWidth="280.0" />
+                           </columnConstraints>
+                        </GridPane>
                         
-                        <VBox fx:id="vboxTopRuangan" spacing="12.0">
-                           <!-- Will be populated dynamically -->
+                        <!-- Charts Section -->
+                        <GridPane hgap="20.0" vgap="20.0">
+                           <children>
+                              <!-- Bar Chart -->
+                              <VBox spacing="10.0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 3);" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                 <children>
+                                    <Label text="📊 Statistik per Ruangan">
+                                       <font>
+                                          <Font name="System Bold" size="15.0" />
+                                       </font>
+                                    </Label>
+                                    <BarChart fx:id="chartRuangan" animated="true" legendVisible="true" prefHeight="300.0" VBox.vgrow="ALWAYS">
+                                       <xAxis>
+                                          <CategoryAxis label="Ruangan" side="BOTTOM" />
+                                       </xAxis>
+                                       <yAxis>
+                                          <NumberAxis label="Jumlah" side="LEFT" />
+                                       </yAxis>
+                                    </BarChart>
+                                 </children>
+                              </VBox>
+                              
+                              <!-- Pie Chart -->
+                              <VBox spacing="10.0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 3);" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                 <children>
+                                    <Label text="🥧 Status Peminjaman">
+                                       <font>
+                                          <Font name="System Bold" size="15.0" />
+                                       </font>
+                                    </Label>
+                                    <PieChart fx:id="chartStatus" animated="true" legendVisible="true" prefHeight="300.0" VBox.vgrow="ALWAYS" />
+                                 </children>
+                              </VBox>
+                              
+                              <!-- Line Chart -->
+                              <VBox spacing="10.0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 3);" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="1">
+                                 <children>
+                                    <Label text="📈 Trend Peminjaman (6 Bulan Terakhir)">
+                                       <font>
+                                          <Font name="System Bold" size="15.0" />
+                                       </font>
+                                    </Label>
+                                    <LineChart fx:id="chartTrend" animated="true" legendVisible="true" prefHeight="250.0" VBox.vgrow="ALWAYS">
+                                       <xAxis>
+                                          <CategoryAxis label="Bulan" side="BOTTOM" />
+                                       </xAxis>
+                                       <yAxis>
+                                          <NumberAxis label="Jumlah Peminjaman" side="LEFT" />
+                                       </yAxis>
+                                    </LineChart>
+                                 </children>
+                              </VBox>
+                           </children>
+                           <columnConstraints>
+                              <ColumnConstraints hgrow="SOMETIMES" minWidth="600.0" />
+                              <ColumnConstraints hgrow="SOMETIMES" minWidth="600.0" />
+                           </columnConstraints>
+                           <rowConstraints>
+                              <RowConstraints minHeight="350.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="300.0" vgrow="SOMETIMES" />
+                           </rowConstraints>
+                        </GridPane>
+                        
+                        <!-- Detail Table -->
+                        <VBox spacing="10.0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 3);">
+                           <children>
+                              <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                 <children>
+                                    <Label text="📋 Detail Statistik per Ruangan">
+                                       <font>
+                                          <Font name="System Bold" size="15.0" />
+                                       </font>
+                                    </Label>
+                                    <Region HBox.hgrow="ALWAYS" />
+                                    <TextField fx:id="txtSearch" onKeyReleased="#handleSearch" prefWidth="300.0" promptText="🔍 Cari ruangan..." styleClass="text-field" />
+                                 </children>
+                              </HBox>
+                              
+                              <TableView fx:id="tableStatistik" prefHeight="280.0" styleClass="table-view">
+                                 <columns>
+                                    <TableColumn fx:id="colRuangan" minWidth="200.0" prefWidth="250.0" text="Nama Ruangan" />
+                                    <TableColumn fx:id="colTotalPeminjaman" minWidth="100.0" text="Total" />
+                                    <TableColumn fx:id="colAktif" minWidth="80.0" text="Aktif" />
+                                    <TableColumn fx:id="colSelesai" minWidth="80.0" text="Selesai" />
+                                    <TableColumn fx:id="colBatal" minWidth="80.0" text="Batal" />
+                                    <TableColumn fx:id="colPersentase" minWidth="100.0" text="Persentase" />
+                                 </columns>
+                                 <columnResizePolicy>
+                                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                 </columnResizePolicy>
+                              </TableView>
+                           </children>
+                        </VBox>
+                        
+                        <!-- Top Ruangan -->
+                        <VBox spacing="10.0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 3);">
+                           <children>
+                              <Label text="🏆 Top 5 Ruangan Paling Populer">
+                                 <font>
+                                    <Font name="System Bold" size="15.0" />
+                                 </font>
+                              </Label>
+                              
+                              <VBox fx:id="vboxTopRuangan" spacing="12.0" />
+                           </children>
                         </VBox>
                      </children>
+                     <padding>
+                        <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+                     </padding>
                   </VBox>
-               </children>
-               <padding>
-                  <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
-               </padding>
-            </VBox>
-         </content>
-      </ScrollPane>
+               </content>
+            </ScrollPane>
+            
+            <!-- Loading Indicator -->
+            <ProgressIndicator fx:id="progressIndicator" visible="false" />
+         </children>
+      </StackPane>
    </children>
 </AnchorPane>

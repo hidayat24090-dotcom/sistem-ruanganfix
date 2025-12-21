@@ -35,7 +35,7 @@
             </HBox>
             
             <!-- Filter Section -->
-            <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 3);">
+            <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);">
                <children>
                   <Label text="Filter:">
                      <font>
@@ -53,17 +53,24 @@
                </children>
             </HBox>
             
-            <!-- Cards Section (Scrollable) -->
-            <ScrollPane fx:id="scrollPane" fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;" VBox.vgrow="ALWAYS">
-               <content>
-                  <FlowPane fx:id="flowPaneCards" prefWrapLength="1000.0" />
-               </content>
-            </ScrollPane>
+            <!-- Cards Section (Scrollable) with Loading Indicator -->
+            <StackPane VBox.vgrow="ALWAYS">
+               <children>
+                  <ScrollPane fx:id="scrollPane" fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;">
+                     <content>
+                        <FlowPane fx:id="flowPaneCards" prefWrapLength="1000.0" />
+                     </content>
+                  </ScrollPane>
+                  
+                  <!-- Loading Indicator -->
+                  <ProgressIndicator fx:id="progressIndicator" visible="false" />
+               </children>
+            </StackPane>
             
             <!-- Summary Footer -->
-            <HBox alignment="CENTER" spacing="40.0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 3);">
+            <HBox alignment="CENTER" spacing="40.0" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);">
                <children>
-                  <VBox alignment="CENTER" spacing="5.0">
+                  <VBox alignment="CENTER" spacing="3.0">
                      <children>
                         <Label text="Total Ruangan">
                            <font>
@@ -72,15 +79,15 @@
                         </Label>
                         <Label fx:id="lblTotalRuangan" styleClass="title-label" text="0">
                            <font>
-                              <Font name="System Bold" size="24.0" />
+                              <Font name="System Bold" size="22.0" />
                            </font>
                         </Label>
                      </children>
                   </VBox>
                   
-                  <Separator orientation="VERTICAL" prefHeight="60.0" />
+                  <Separator orientation="VERTICAL" prefHeight="50.0" />
                   
-                  <VBox alignment="CENTER" spacing="5.0">
+                  <VBox alignment="CENTER" spacing="3.0">
                      <children>
                         <Label text="Tersedia">
                            <font>
@@ -89,13 +96,13 @@
                         </Label>
                         <Label fx:id="lblTersedia" styleClass="status-tersedia" text="0">
                            <font>
-                              <Font name="System Bold" size="24.0" />
+                              <Font name="System Bold" size="22.0" />
                            </font>
                         </Label>
                      </children>
                   </VBox>
                   
-                  <VBox alignment="CENTER" spacing="5.0">
+                  <VBox alignment="CENTER" spacing="3.0">
                      <children>
                         <Label text="Dipinjam">
                            <font>
@@ -104,7 +111,7 @@
                         </Label>
                         <Label fx:id="lblDipinjam" styleClass="status-dipinjam" text="0">
                            <font>
-                              <Font name="System Bold" size="24.0" />
+                              <Font name="System Bold" size="22.0" />
                            </font>
                         </Label>
                      </children>
@@ -114,9 +121,9 @@
                   
                   <VBox alignment="CENTER_RIGHT">
                      <children>
-                        <Label text="✨ Klik 'Ajukan Peminjaman' untuk meminjam ruangan">
+                        <Label text="✨ Klik 'Ajukan' untuk meminjam ruangan">
                            <font>
-                              <Font size="12.0" />
+                              <Font size="11.0" />
                            </font>
                         </Label>
                      </children>
