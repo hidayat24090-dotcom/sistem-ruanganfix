@@ -271,7 +271,7 @@ public class UserPeminjamanFormController {
             }
             
             // Determine jenis kegiatan
-            String jenisKegiatan = rbKuliah.isSelected() ? "kuliah" : "non_kuliah";
+            String jenisKegiatan = rbKuliah.isSelected() ? "kuliah" : "lainnya";
             
             // Confirm dialog
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);

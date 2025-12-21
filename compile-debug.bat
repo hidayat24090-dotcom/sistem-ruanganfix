@@ -49,6 +49,7 @@ javac --module-path "%JAVAFX_PATH%" ^
       src\com\sistemruangan\view\UserRiwayatController.java ^
       src\com\sistemruangan\view\UserProfileController.java ^
       src\com\sistemruangan\view\JadwalBulananController.java ^
+      src\com\sistemruangan\view\ApprovalPeminjamanController.java ^
       src\com\sistemruangan\MainApp.java
 
 
@@ -91,7 +92,7 @@ if exist "bin\css\style.css" (
     echo      ❌ CSS files NOT copied - CHECK resources\css\ folder!
 )
 
-REM Copy Images folder (NEW)
+REM Copy Images folder
 echo    - Copying image resources...
 if not exist "bin\images" mkdir bin\images
 if not exist "bin\images\ruangan" mkdir bin\images\ruangan
@@ -116,8 +117,14 @@ if exist "bin\com\sistemruangan\MainApp.class" (
     echo    ❌ MainApp.class NOT found!
 )
 
+if exist "bin\com\sistemruangan\view\ApprovalPeminjamanController.class" (
+    echo    ✅ ApprovalPeminjamanController.class found
+) else (
+    echo    ❌ ApprovalPeminjamanController.class NOT found!
+)
+
 if exist "bin\com\sistemruangan\view\BuktiPeminjamanDialog.class" (
-    echo    ✅ BuktiPeminjamanDialog.class found (in view package)
+    echo    ✅ BuktiPeminjamanDialog.class found
 ) else (
     echo    ❌ BuktiPeminjamanDialog.class NOT found!
 )
@@ -126,6 +133,12 @@ if exist "bin\com\sistemruangan\util\DatabaseConnection.class" (
     echo    ✅ DatabaseConnection.class found
 ) else (
     echo    ❌ DatabaseConnection.class NOT found!
+)
+
+if exist "bin\fxml\ApprovalPeminjaman.fxml" (
+    echo    ✅ ApprovalPeminjaman.fxml found in bin
+) else (
+    echo    ❌ ApprovalPeminjaman.fxml NOT found in bin!
 )
 
 if exist "bin\fxml\UserLogin.fxml" (
@@ -151,21 +164,15 @@ echo ========================================
 echo [SUCCESS] Compilation completed!
 echo ========================================
 echo.
-echo ✅ New Features Added:
-echo    - Foto Ruangan Upload (Admin)
-echo    - Beautiful Card View (User)
-echo    - Bukti Peminjaman (Receipt/Kwitansi)
-echo.
-echo 📦 Package Structure:
-echo    - BuktiPeminjamanDialog: com.sistemruangan.view
-echo    - Controllers: com.sistemruangan.controller
-echo    - Models: com.sistemruangan.model
-echo    - Utils: com.sistemruangan.util
+echo ✅ Features:
+echo    - Approval System untuk Non-Kuliah
+echo    - Foto Ruangan Upload
+echo    - Bukti Peminjaman (Receipt)
 echo.
 echo Next Steps:
-echo 1. Run update-schema.sql to add foto_path column
-echo 2. Add default_room.png to resources\images\
-echo 3. Run test-db.bat to test database
-echo 4. Run run.bat to start application
+echo 1. Pastikan MySQL running
+echo 2. Run update-schema.sql (jika belum)
+echo 3. Run test-db.bat
+echo 4. Run run.bat
 echo.
 pause

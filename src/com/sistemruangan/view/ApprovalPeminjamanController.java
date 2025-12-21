@@ -3,6 +3,7 @@ package com.sistemruangan.view;
 import com.sistemruangan.MainApp;
 import com.sistemruangan.controller.PeminjamanController;
 import com.sistemruangan.model.Peminjaman;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
@@ -17,7 +18,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Controller untuk halaman Approval Peminjaman - ADMIN
+ * Controller untuk halaman Approval Peminjaman - ADMIN (FIXED)
  */
 public class ApprovalPeminjamanController {
     
@@ -61,7 +62,7 @@ public class ApprovalPeminjamanController {
             
             // Setup filter
             cbFilter.getItems().addAll("Semua", "Menunggu", "Disetujui", "Ditolak");
-            cbFilter.setValue("Menunggu");
+            cbFilter.setValue("Semua");
             
             // Load data
             loadData();
@@ -230,56 +231,53 @@ public class ApprovalPeminjamanController {
         try {
             System.out.println("📋 Loading approval data...");
             
-            // Get all peminjaman
+            // Get ALL peminjaman
             allData = peminjamanController.getAllPeminjaman();
             
             if (allData == null) {
                 System.err.println("❌ allData is NULL!");
-                showError("Gagal memuat data: Data peminjaman tidak ditemukan");
+                showError("Gagal memuat data!");
                 return;
             }
             
             System.out.println("✅ Got " + allData.size() + " total peminjaman");
             
-            // Filter only lainnya
-            ObservableList<Peminjaman> lainnyanList = javafx.collections.FXCollections.observableArrayList();
+            // Filter HANYA yang jenis_kegiatan = 'lainnya' 
+            ObservableList<Peminjaman> lainnyaList = FXCollections.observableArrayList();
             
             for (Peminjaman p : allData) {
-                System.out.println("  - ID: " + p.getId() + 
-                                ", Jenis: " + p.getJenisKegiatan() + 
-                                ", Status: " + p.getStatusApproval());
-                
-                // Check if jenis_kegiatan is 'lainnya' (case insensitive)
                 String jenis = p.getJenisKegiatan();
+                
+                System.out.println("  - ID: " + p.getId() + 
+                                ", Jenis: '" + jenis + "'" +
+                                ", Status Approval: '" + p.getStatusApproval() + "'");
+                
+                // CRITICAL FIX: Check for 'lainnya' (bukan 'non_kuliah')
+                // Database menyimpan sebagai 'lainnya'
                 if (jenis != null && "lainnya".equalsIgnoreCase(jenis.trim())) {
-                    lainnyanList.add(p);
-                    System.out.println("    ✅ Added to lainnya list");
+                    lainnyaList.add(p);
+                    System.out.println("    ✅ Added to approval list");
                 }
             }
             
-            System.out.println("✅ Found " + lainnyanList.size() + " 'lainnya' peminjaman");
+            System.out.println("✅ Found " + lainnyaList.size() + " 'lainnya' peminjaman");
             
             // Create filtered list
-            filteredData = new FilteredList<>(lainnyanList, p -> true);
+            filteredData = new FilteredList<>(lainnyaList, p -> true);
             tablePeminjaman.setItems(filteredData);
             
             // Update summary
             updateSummary();
             
             // Show message if no data
-            if (lainnyanList.isEmpty()) {
-                System.out.println("ℹ️ No 'lainnya' peminjaman found yet");
-                lblPending.setText("0");
-                lblApproved.setText("0");
-                lblRejected.setText("0");
+            if (lainnyaList.isEmpty()) {
+                System.out.println("ℹ️ No 'lainnya' peminjaman found");
             }
-            
-            System.out.println("✅ Data loaded successfully");
             
         } catch (Exception e) {
             System.err.println("❌ ERROR loading data: " + e.getMessage());
             e.printStackTrace();
-            showError("Error loading data: " + e.getMessage());
+            showError("Error: " + e.getMessage());
         }
     }
     
@@ -292,8 +290,10 @@ public class ApprovalPeminjamanController {
         int rejected = 0;
         
         for (Peminjaman p : filteredData.getSource()) {
-            String status = p.getStatusApproval().toLowerCase();
-            switch (status) {
+            String status = p.getStatusApproval();
+            if (status == null) continue;
+            
+            switch (status.toLowerCase()) {
                 case "pending":
                     pending++;
                     break;
@@ -346,7 +346,7 @@ public class ApprovalPeminjamanController {
                 suratBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
                 suratBox.setStyle("-fx-background-color: #FFF3CD; -fx-padding: 10; -fx-background-radius: 6;");
                 
-                Label lblSurat = new Label("📄 Surat Permohonan: " + peminjaman.getSuratPath());
+                Label lblSurat = new Label("📄 Surat: " + peminjaman.getSuratPath());
                 Button btnBukaSurat = new Button("Buka File");
                 btnBukaSurat.setStyle("-fx-background-color: #5B9BD5; -fx-text-fill: white; -fx-font-weight: bold;");
                 btnBukaSurat.setOnAction(e -> openSurat(peminjaman.getSuratPath()));
@@ -385,7 +385,6 @@ public class ApprovalPeminjamanController {
      */
     private void handleApprove(Peminjaman peminjaman) {
         try {
-            // Dialog untuk keterangan
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Setujui Peminjaman");
             dialog.setHeaderText("Setujui peminjaman ruangan " + peminjaman.getNamaRuangan());
@@ -424,7 +423,6 @@ public class ApprovalPeminjamanController {
      */
     private void handleReject(Peminjaman peminjaman) {
         try {
-            // Dialog untuk alasan penolakan
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Tolak Peminjaman");
             dialog.setHeaderText("Tolak peminjaman ruangan " + peminjaman.getNamaRuangan());
@@ -552,7 +550,7 @@ public class ApprovalPeminjamanController {
     @FXML
     private void handleRefresh() {
         txtSearch.clear();
-        cbFilter.setValue("Menunggu");
+        cbFilter.setValue("Semua");
         loadData();
     }
     
