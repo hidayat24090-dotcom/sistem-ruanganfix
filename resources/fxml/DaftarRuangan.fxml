@@ -13,13 +13,15 @@
             <!-- HEADER -->
             <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: #f8f9fa; -fx-padding: 15; -fx-background-radius: 8;">
                <children>
-                  <Button fx:id="btnKembali" mnemonicParsing="false" onAction="#handleKembali" text="◄ Kembali" styleClass="secondary-button" />
-                  
                   <Label text="📋 Daftar Ruangan">
                      <font>
                         <Font name="System Bold" size="22.0" />
                      </font>
                   </Label>
+                  
+                  <Region HBox.hgrow="ALWAYS" />
+                  
+                  <Button fx:id="btnKembali" mnemonicParsing="false" onAction="#handleKembali" text="← Kembali" styleClass="secondary-button" />
                </children>
             </HBox>
             
