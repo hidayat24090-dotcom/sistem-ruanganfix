@@ -179,7 +179,7 @@
                                           <Font name="System Bold" size="15.0" />
                                        </font>
                                     </Label>
-                                    <PieChart fx:id="chartStatus" animated="true" legendVisible="true" prefHeight="300.0" VBox.vgrow="ALWAYS" />
+                                    <PieChart fx:id="chartStatus" animated="true" legendVisible="true" prefHeight="200.0" VBox.vgrow="ALWAYS" />
                                  </children>
                               </VBox>
                               

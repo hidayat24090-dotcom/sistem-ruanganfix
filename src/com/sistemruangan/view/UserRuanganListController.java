@@ -3,6 +3,7 @@ package com.sistemruangan.view;
 import com.sistemruangan.MainApp;
 import com.sistemruangan.controller.RuanganController;
 import com.sistemruangan.model.Ruangan;
+import com.sistemruangan.util.DialogUtil;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -129,10 +130,12 @@ public class UserRuanganListController {
                     progressIndicator.setVisible(false);
                 }
                 
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Error");
-                alert.setContentText("Gagal memuat data ruangan!");
-                alert.showAndWait();
+                DialogUtil.showDialog(
+                    DialogUtil.DialogType.ERROR,
+                    "Error",
+                    "Gagal memuat data ruangan!",
+                    MainApp.getRootContainer()
+                );
             }
         };
         
@@ -410,18 +413,24 @@ public class UserRuanganListController {
     }
     
     /**
-     * Handle tombol pinjam
+     * Handle tombol pinjam - FIXED: Use overlay dialog instead of Alert
      */
     private void handlePinjam(Ruangan ruangan) {
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Konfirmasi Peminjaman");
-        confirm.setHeaderText("Pinjam Ruangan: " + ruangan.getNamaRuangan());
-        confirm.setContentText("Anda akan diarahkan ke form peminjaman. Lanjutkan?");
-        
-        if (confirm.showAndWait().get() == ButtonType.OK) {
-            UserPeminjamanFormController.setSelectedRuangan(ruangan);
-            MainApp.showUserPeminjamanForm();
-        }
+        DialogUtil.showConfirmation(
+            "Konfirmasi Peminjaman",
+            "Anda akan mengajukan peminjaman untuk ruangan: " + ruangan.getNamaRuangan() + 
+            "\n\nAnda akan diarahkan ke form peminjaman. Lanjutkan?",
+            MainApp.getRootContainer(),
+            () -> {
+                // On Confirm
+                UserPeminjamanFormController.setSelectedRuangan(ruangan);
+                MainApp.showUserPeminjamanForm();
+            },
+            () -> {
+                // On Cancel
+                System.out.println("Peminjaman dibatalkan");
+            }
+        );
     }
     
     @FXML

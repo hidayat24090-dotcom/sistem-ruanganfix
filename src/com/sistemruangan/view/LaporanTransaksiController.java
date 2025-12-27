@@ -29,7 +29,7 @@ import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 
 /**
- * Controller untuk Laporan Transaksi - COMPLETE VERSION WITH PROFESSIONAL PDF
+ * Controller untuk Laporan Transaksi - FIXED VERSION
  */
 public class LaporanTransaksiController {
     
@@ -113,8 +113,11 @@ public class LaporanTransaksiController {
         chartRuangan.setLegendSide(Side.TOP);
         chartRuangan.setAnimated(true);
         
+        // FIXED: Pie chart configuration to prevent overflow
         chartStatus.setLegendSide(Side.RIGHT);
         chartStatus.setAnimated(true);
+        chartStatus.setLabelsVisible(true);
+        chartStatus.setStartAngle(90);
         
         if (chartTrend != null) {
             chartTrend.setLegendSide(Side.TOP);
@@ -221,9 +224,15 @@ public class LaporanTransaksiController {
             for (Map.Entry<String, Integer> entry : statusData.entrySet()) {
                 if (entry.getValue() > 0) {
                     double percentage = (entry.getValue() * 100.0) / totalAll;
+                    
+                    // FIXED: Shorter label to prevent overflow
+                    String statusName = entry.getKey().toUpperCase();
+                    if (statusName.length() > 10) {
+                        statusName = statusName.substring(0, 8) + "..";
+                    }
+                    
                     PieChart.Data data = new PieChart.Data(
-                        entry.getKey().toUpperCase() + " (" + 
-                        String.format("%.1f%%", percentage) + ")",
+                        statusName + " (" + String.format("%.1f%%", percentage) + ")",
                         entry.getValue()
                     );
                     pieChartData.add(data);
@@ -236,6 +245,10 @@ public class LaporanTransaksiController {
                 for (PieChart.Data data : chartStatus.getData()) {
                     String color = getStatusColor(data.getName());
                     data.getNode().setStyle("-fx-pie-color: " + color + ";");
+                    
+                    // Add tooltip for full information
+                    Tooltip tooltip = new Tooltip(data.getName() + ": " + (int)data.getPieValue() + " peminjaman");
+                    Tooltip.install(data.getNode(), tooltip);
                 }
             });
             
