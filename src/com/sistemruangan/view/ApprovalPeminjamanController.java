@@ -3,6 +3,8 @@ package com.sistemruangan.view;
 import com.sistemruangan.MainApp;
 import com.sistemruangan.controller.PeminjamanController;
 import com.sistemruangan.model.Peminjaman;
+import com.sistemruangan.util.DialogUtil;
+import javafx.scene.layout.StackPane;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -385,31 +387,59 @@ public class ApprovalPeminjamanController {
      */
     private void handleApprove(Peminjaman peminjaman) {
         try {
-            TextInputDialog dialog = new TextInputDialog();
-            dialog.setTitle("Setujui Peminjaman");
-            dialog.setHeaderText("Setujui peminjaman ruangan " + peminjaman.getNamaRuangan());
-            dialog.setContentText("Keterangan (opsional):");
+            StackPane root = MainApp.getRootContainer();
             
-            dialog.showAndWait().ifPresent(keterangan -> {
-                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-                confirm.setTitle("Konfirmasi Persetujuan");
-                confirm.setHeaderText("Setujui Peminjaman");
-                confirm.setContentText("Yakin menyetujui peminjaman ini?");
-                
-                if (confirm.showAndWait().get() == ButtonType.OK) {
-                    if (peminjamanController.approvePeminjaman(
-                            peminjaman.getId(), 
-                            peminjaman.getIdRuangan(), 
-                            "Admin", 
-                            keterangan.trim())) {
-                        
-                        showSuccess("Peminjaman berhasil disetujui!");
-                        loadData();
-                    } else {
-                        showError("Gagal menyetujui peminjaman!");
+            // Show input dialog for keterangan
+            DialogUtil.showInputDialog(
+                "Setujui Peminjaman",
+                "Masukkan keterangan approval (opsional):",
+                "Contoh: Disetujui. Pastikan ruangan dibersihkan setelah acara.",
+                root,
+                new DialogUtil.InputCallback() {
+                    @Override
+                    public void onInput(String keterangan) {
+                        // Show confirmation
+                        DialogUtil.showConfirmation(
+                            "Konfirmasi Persetujuan",
+                            "Yakin menyetujui peminjaman ruangan " + peminjaman.getNamaRuangan() + "?",
+                            root,
+                            () -> {
+                                // On Confirm - Approve
+                                if (peminjamanController.approvePeminjaman(
+                                        peminjaman.getId(), 
+                                        peminjaman.getIdRuangan(), 
+                                        "Admin", 
+                                        keterangan.trim())) {
+                                    
+                                    DialogUtil.showDialog(
+                                        DialogUtil.DialogType.SUCCESS,
+                                        "Berhasil",
+                                        "Peminjaman berhasil disetujui!",
+                                        root
+                                    );
+                                    loadData();
+                                } else {
+                                    DialogUtil.showDialog(
+                                        DialogUtil.DialogType.ERROR,
+                                        "Gagal",
+                                        "Gagal menyetujui peminjaman!",
+                                        root
+                                    );
+                                }
+                            },
+                            () -> {
+                                // On Cancel
+                                System.out.println("Approval cancelled");
+                            }
+                        );
+                    }
+                    
+                    @Override
+                    public void onCancel() {
+                        System.out.println("Input cancelled");
                     }
                 }
-            });
+            );
             
         } catch (Exception e) {
             System.err.println("❌ ERROR approving: " + e.getMessage());
@@ -423,35 +453,63 @@ public class ApprovalPeminjamanController {
      */
     private void handleReject(Peminjaman peminjaman) {
         try {
-            TextInputDialog dialog = new TextInputDialog();
-            dialog.setTitle("Tolak Peminjaman");
-            dialog.setHeaderText("Tolak peminjaman ruangan " + peminjaman.getNamaRuangan());
-            dialog.setContentText("Alasan penolakan:");
+            StackPane root = MainApp.getRootContainer();
             
-            dialog.showAndWait().ifPresent(alasan -> {
-                if (alasan.trim().isEmpty()) {
-                    showWarning("Alasan penolakan harus diisi!");
-                    return;
-                }
-                
-                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-                confirm.setTitle("Konfirmasi Penolakan");
-                confirm.setHeaderText("Tolak Peminjaman");
-                confirm.setContentText("Yakin menolak peminjaman ini?");
-                
-                if (confirm.showAndWait().get() == ButtonType.OK) {
-                    if (peminjamanController.rejectPeminjaman(
-                            peminjaman.getId(), 
-                            "Admin", 
-                            alasan.trim())) {
+            DialogUtil.showInputDialog(
+                "Tolak Peminjaman",
+                "Masukkan alasan penolakan:",
+                "Contoh: Ruangan sedang direnovasi untuk persiapan wisuda.",
+                root,
+                new DialogUtil.InputCallback() {
+                    @Override
+                    public void onInput(String alasan) {
+                        if (alasan.trim().isEmpty()) {
+                            DialogUtil.showDialog(
+                                DialogUtil.DialogType.WARNING,
+                                "Peringatan",
+                                "Alasan penolakan harus diisi!",
+                                root
+                            );
+                            return;
+                        }
                         
-                        showSuccess("Peminjaman berhasil ditolak!");
-                        loadData();
-                    } else {
-                        showError("Gagal menolak peminjaman!");
+                        // Show confirmation
+                        DialogUtil.showConfirmation(
+                            "Konfirmasi Penolakan",
+                            "Yakin menolak peminjaman ini?",
+                            root,
+                            () -> {
+                                if (peminjamanController.rejectPeminjaman(
+                                        peminjaman.getId(), 
+                                        "Admin", 
+                                        alasan.trim())) {
+                                    
+                                    DialogUtil.showDialog(
+                                        DialogUtil.DialogType.SUCCESS,
+                                        "Berhasil",
+                                        "Peminjaman berhasil ditolak!",
+                                        root
+                                    );
+                                    loadData();
+                                } else {
+                                    DialogUtil.showDialog(
+                                        DialogUtil.DialogType.ERROR,
+                                        "Gagal",
+                                        "Gagal menolak peminjaman!",
+                                        root
+                                    );
+                                }
+                            },
+                            null
+                        );
+                    }
+                    
+                    @Override
+                    public void onCancel() {
+                        System.out.println("Rejection cancelled");
                     }
                 }
-            });
+            );
             
         } catch (Exception e) {
             System.err.println("❌ ERROR rejecting: " + e.getMessage());
@@ -560,26 +618,29 @@ public class ApprovalPeminjamanController {
     }
     
     private void showSuccess(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Berhasil");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.SUCCESS,
+            "Berhasil",
+            message,
+            MainApp.getRootContainer()
+        );
     }
-    
+
     private void showError(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.ERROR,
+            "Error",
+            message,
+            MainApp.getRootContainer()
+        );
     }
-    
+
     private void showWarning(String message) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("Peringatan");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.WARNING,
+            "Peringatan",
+            message,
+            MainApp.getRootContainer()
+        );
     }
 }

@@ -2,6 +2,8 @@ package com.sistemruangan.view;
 
 import com.sistemruangan.MainApp;
 import com.sistemruangan.util.DatabaseConnection;
+import com.sistemruangan.util.DialogUtil;
+import javafx.scene.layout.StackPane;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
@@ -153,8 +155,12 @@ public class LoginController {
      * Menampilkan pesan error
      */
     private void showError(String message) {
-        errorLabel.setText(message);
-        errorLabel.setVisible(true);
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.ERROR,
+            "Error",
+            message,
+            MainApp.getRootContainer()
+        );
     }
     
     @FXML

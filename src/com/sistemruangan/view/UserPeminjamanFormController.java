@@ -6,6 +6,8 @@ import com.sistemruangan.controller.RuanganController;
 import com.sistemruangan.model.Peminjaman;
 import com.sistemruangan.model.Ruangan;
 import com.sistemruangan.util.SessionManager;
+import com.sistemruangan.util.DialogUtil;
+import javafx.scene.layout.StackPane;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -270,47 +272,50 @@ public class UserPeminjamanFormController {
                 return;
             }
             
-            // Determine jenis kegiatan
             String jenisKegiatan = rbKuliah.isSelected() ? "kuliah" : "lainnya";
             
-            // Confirm dialog
-            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-            confirm.setTitle("Konfirmasi Pengajuan");
-            confirm.setHeaderText("Ajukan Peminjaman Ruangan");
+            StackPane root = MainApp.getRootContainer();
             
             String confirmMessage = rbKuliah.isSelected() 
                 ? "Peminjaman untuk kegiatan kuliah akan langsung disetujui.\nLanjutkan?" 
                 : "Peminjaman untuk kegiatan non-kuliah memerlukan persetujuan admin.\nLanjutkan?";
             
-            confirm.setContentText(confirmMessage);
-            
-            if (confirm.showAndWait().get() != ButtonType.OK) {
-                return;
-            }
-            
-            // Create peminjaman
-            Peminjaman peminjaman = new Peminjaman();
-            peminjaman.setIdRuangan(cbRuangan.getValue().getId());
-            peminjaman.setNamaRuangan(cbRuangan.getValue().getNamaRuangan());
-            peminjaman.setNamaPeminjam(SessionManager.getNamaLengkap());
-            peminjaman.setKeperluan(txtKeperluan.getText().trim());
-            peminjaman.setJenisKegiatan(jenisKegiatan);
-            peminjaman.setTanggalPinjam(dpTglPinjam.getValue());
-            peminjaman.setTanggalKembali(dpTglKembali.getValue());
-            peminjaman.setStatusPeminjaman("aktif");
-            
-            // Add non-kuliah data if applicable
-            if (rbNonKuliah.isSelected()) {
-                peminjaman.setPenjelasanKegiatan(txtPenjelasanKegiatan.getText().trim());
-                peminjaman.setSuratPath(selectedSuratPath);
-            }
-            
-            // Submit
-            if (peminjamanController.tambahPeminjaman(peminjaman)) {
-                showSuccess(rbKuliah.isSelected());
-            } else {
-                showError("Gagal mengajukan peminjaman! Silakan coba lagi.");
-            }
+            DialogUtil.showConfirmation(
+                "Konfirmasi Pengajuan",
+                confirmMessage,
+                root,
+                () -> {
+                    // On Confirm - Submit
+                    Peminjaman peminjaman = new Peminjaman();
+                    peminjaman.setIdRuangan(cbRuangan.getValue().getId());
+                    peminjaman.setNamaRuangan(cbRuangan.getValue().getNamaRuangan());
+                    peminjaman.setNamaPeminjam(SessionManager.getNamaLengkap());
+                    peminjaman.setKeperluan(txtKeperluan.getText().trim());
+                    peminjaman.setJenisKegiatan(jenisKegiatan);
+                    peminjaman.setTanggalPinjam(dpTglPinjam.getValue());
+                    peminjaman.setTanggalKembali(dpTglKembali.getValue());
+                    peminjaman.setStatusPeminjaman("aktif");
+                    
+                    if (rbNonKuliah.isSelected()) {
+                        peminjaman.setPenjelasanKegiatan(txtPenjelasanKegiatan.getText().trim());
+                        peminjaman.setSuratPath(selectedSuratPath);
+                    }
+                    
+                    if (peminjamanController.tambahPeminjaman(peminjaman)) {
+                        showSuccess(rbKuliah.isSelected());
+                    } else {
+                        DialogUtil.showDialog(
+                            DialogUtil.DialogType.ERROR,
+                            "Gagal",
+                            "Gagal mengajukan peminjaman! Silakan coba lagi.",
+                            root
+                        );
+                    }
+                },
+                () -> {
+                    System.out.println("Submission cancelled");
+                }
+            );
             
         } catch (Exception e) {
             System.err.println("❌ ERROR in handleSubmit(): " + e.getMessage());
@@ -377,21 +382,39 @@ public class UserPeminjamanFormController {
     private void showError(String message) {
         errorLabel.setText(message);
         errorLabel.setVisible(true);
+        
+        // Also show as overlay dialog for better visibility
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.ERROR,
+            "Error Validasi",
+            message,
+            MainApp.getRootContainer()
+        );
     }
     
     private void showSuccess(boolean isKuliah) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Berhasil");
-        alert.setHeaderText("Pengajuan Peminjaman Berhasil!");
+        StackPane root = MainApp.getRootContainer();
         
         String message = isKuliah 
             ? "Peminjaman ruangan Anda telah disetujui secara otomatis.\nSilakan gunakan ruangan sesuai jadwal yang ditentukan."
             : "Pengajuan peminjaman Anda telah dikirim.\nSilakan tunggu persetujuan dari admin (maks. 1x24 jam).";
         
-        alert.setContentText(message);
-        alert.showAndWait();
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.SUCCESS,
+            "Pengajuan Berhasil",
+            message,
+            root
+        );
         
-        MainApp.showUserDashboard();
+        // Delay before redirect
+        javafx.application.Platform.runLater(() -> {
+            try {
+                Thread.sleep(1500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            MainApp.showUserDashboard();
+        });
     }
     
     @FXML

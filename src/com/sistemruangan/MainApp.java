@@ -12,19 +12,18 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import com.sistemruangan.util.DatabaseConnection;
 
 /**
- * Main Application with Custom Window Controls
+ * Main Application with Overlay Dialog Support
+ * CRITICAL: contentContainer for content, rootContainer for overlays
  */
 public class MainApp extends Application {
     
     private static Stage primaryStage;
-    private static StackPane rootContainer;
+    private static StackPane rootContainer;      // For overlays
+    private static StackPane contentContainer;   // For actual content
     private static Scene mainScene;
     private static boolean isFullscreen = false;
     private static HBox customTitleBar;
@@ -36,7 +35,6 @@ public class MainApp extends Application {
             System.out.println("   APLIKASI STARTING...");
             System.out.println("========================================");
             
-            // Test database
             System.out.println("\n[1/4] Testing database connection...");
             if (!DatabaseConnection.testConnection()) {
                 showErrorDialog("Database Error", 
@@ -51,46 +49,46 @@ public class MainApp extends Application {
             
             primaryStage = stage;
             
-            // Create main container with custom title bar
-            System.out.println("\n[2/4] Creating main scene container...");
+            System.out.println("\n[2/4] Creating main scene container with OVERLAY support...");
             StackPane mainContainer = new StackPane();
             
-            // Custom title bar (hidden when fullscreen)
+            // CRITICAL: Two-layer system
+            // Layer 1: contentContainer (for FXML content)
+            contentContainer = new StackPane();
+            contentContainer.setStyle("-fx-background-color: transparent;");
+            
+            // Layer 2: rootContainer (includes content + overlays)
+            rootContainer = new StackPane();
+            rootContainer.setStyle("-fx-background-color: transparent;");
+            rootContainer.getChildren().add(contentContainer);
+            
+            // Custom title bar
             customTitleBar = createCustomTitleBar();
             customTitleBar.setManaged(false);
             customTitleBar.setVisible(false);
             
-            // Content container
-            rootContainer = new StackPane();
-            rootContainer.setStyle("-fx-background-color: transparent;");
-            
-            // Stack title bar on top
+            // Stack all layers
             mainContainer.getChildren().addAll(rootContainer, customTitleBar);
             StackPane.setAlignment(customTitleBar, Pos.TOP_RIGHT);
             
-            // Get screen size
             javafx.stage.Screen screen = javafx.stage.Screen.getPrimary();
             double screenWidth = screen.getBounds().getWidth();
             double screenHeight = screen.getBounds().getHeight();
             
             mainScene = new Scene(mainContainer, screenWidth, screenHeight);
             
-            // Load CSS
             String cssPath = "/css/style.css";
             if (MainApp.class.getResource(cssPath) != null) {
                 mainScene.getStylesheets().add(MainApp.class.getResource(cssPath).toExternalForm());
                 System.out.println("✅ CSS loaded");
             }
             
-            // Setup stage
             primaryStage.setScene(mainScene);
             primaryStage.setTitle("Sistem Inventaris & Peminjaman Ruangan");
             primaryStage.setFullScreenExitHint("");
             
-            // Setup fullscreen toggle
             setupFullscreenToggle();
             
-            // Fullscreen listener - show/hide custom controls
             primaryStage.fullScreenProperty().addListener((obs, wasFullScreen, isNowFullScreen) -> {
                 isFullscreen = isNowFullScreen;
                 customTitleBar.setVisible(!isNowFullScreen);
@@ -109,15 +107,13 @@ public class MainApp extends Application {
             System.out.println("\n[4/4] Showing stage...");
             primaryStage.show();
             
-            // Start in fullscreen
             primaryStage.setFullScreen(true);
             isFullscreen = true;
             System.out.println("🖥️  Starting in FULLSCREEN mode");
             
             System.out.println("\n✅ Application started successfully!");
-            System.out.println("⚡ Single Scene Architecture (Zero Flicker!)");
+            System.out.println("✨ OVERLAY DIALOG SYSTEM: ACTIVE");
             System.out.println("📌 F11 atau ESC: Toggle fullscreen");
-            System.out.println("📌 Window controls muncul ketika keluar fullscreen");
             System.out.println("========================================\n");
             
         } catch (Exception e) {
@@ -130,9 +126,6 @@ public class MainApp extends Application {
         }
     }
     
-    /**
-     * Create custom title bar dengan window controls
-     */
     private HBox createCustomTitleBar() {
         HBox titleBar = new HBox(0);
         titleBar.setStyle(
@@ -144,12 +137,10 @@ public class MainApp extends Application {
         titleBar.setPrefHeight(40);
         titleBar.setMaxWidth(200);
         
-        // Minimize button
         Button btnMinimize = new Button("—");
         styleWindowButton(btnMinimize, "#F1C40F");
         btnMinimize.setOnAction(e -> primaryStage.setIconified(true));
         
-        // Maximize/Restore button
         Button btnMaximize = new Button("□");
         styleWindowButton(btnMaximize, "#2ECC71");
         btnMaximize.setOnAction(e -> {
@@ -162,7 +153,6 @@ public class MainApp extends Application {
             }
         });
         
-        // Close button
         Button btnClose = new Button("✕");
         styleWindowButton(btnClose, "#E74C3C");
         btnClose.setOnAction(e -> handleClose());
@@ -172,9 +162,6 @@ public class MainApp extends Application {
         return titleBar;
     }
     
-    /**
-     * Style untuk window control buttons
-     */
     private void styleWindowButton(Button button, String hoverColor) {
         button.setStyle(
             "-fx-background-color: transparent;" +
@@ -211,9 +198,6 @@ public class MainApp extends Application {
         );
     }
     
-    /**
-     * Handle close dengan konfirmasi
-     */
     private void handleClose() {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Konfirmasi Keluar");
@@ -228,18 +212,13 @@ public class MainApp extends Application {
         }
     }
     
-    /**
-     * Setup fullscreen toggle
-     */
     private static void setupFullscreenToggle() {
         if (mainScene != null) {
-            // F11 untuk toggle
             mainScene.getAccelerators().put(
                 new KeyCodeCombination(KeyCode.F11),
                 () -> toggleFullscreen()
             );
             
-            // ESC untuk keluar fullscreen
             mainScene.setOnKeyPressed(event -> {
                 if (event.getCode() == KeyCode.ESCAPE && isFullscreen) {
                     toggleFullscreen();
@@ -249,9 +228,6 @@ public class MainApp extends Application {
         }
     }
     
-    /**
-     * Toggle fullscreen
-     */
     public static void toggleFullscreen() {
         isFullscreen = !isFullscreen;
         primaryStage.setFullScreen(isFullscreen);
@@ -263,7 +239,7 @@ public class MainApp extends Application {
         }
     }
     
-    // ========== SCENE NAVIGATION METHODS ==========
+    // ========== NAVIGATION METHODS ==========
     
     public static void showLoginScene() {
         loadContent("/fxml/Login.fxml", "Login Admin");
@@ -322,7 +298,8 @@ public class MainApp extends Application {
     }
     
     /**
-     * Load content (Zero Flicker!)
+     * CRITICAL: Load content into contentContainer, NOT rootContainer
+     * rootContainer is for overlays only!
      */
     private static void loadContent(String fxmlPath, String title) {
         try {
@@ -335,7 +312,8 @@ public class MainApp extends Application {
             FXMLLoader loader = new FXMLLoader(MainApp.class.getResource(fxmlPath));
             Parent content = loader.load();
             
-            rootContainer.getChildren().setAll(content);
+            // CRITICAL: Use contentContainer, NOT rootContainer
+            contentContainer.getChildren().setAll(content);
             
             if (content instanceof javafx.scene.layout.Region) {
                 javafx.scene.layout.Region region = (javafx.scene.layout.Region) content;
@@ -351,6 +329,14 @@ public class MainApp extends Application {
             e.printStackTrace();
             showErrorDialog("Load Error", "Gagal memuat: " + title);
         }
+    }
+    
+    /**
+     * CRITICAL: Get rootContainer for overlay dialogs
+     * This is the ONLY way controllers should access the root!
+     */
+    public static StackPane getRootContainer() {
+        return rootContainer;
     }
     
     private static void showErrorDialog(String title, String message) {

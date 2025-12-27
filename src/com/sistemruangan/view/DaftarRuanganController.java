@@ -3,6 +3,8 @@ package com.sistemruangan.view;
 import com.sistemruangan.MainApp;
 import com.sistemruangan.controller.RuanganController;
 import com.sistemruangan.model.Ruangan;
+import com.sistemruangan.util.DialogUtil;
+import javafx.scene.layout.StackPane;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -19,7 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-
 /**
  * Controller untuk halaman Daftar Ruangan - WITH PHOTO UPLOAD
  */
@@ -156,12 +157,10 @@ public class DaftarRuanganController {
             File selectedFile = fileChooser.showOpenDialog(btnUploadFoto.getScene().getWindow());
             
             if (selectedFile != null) {
-                // Generate unique filename
                 String timestamp = String.valueOf(System.currentTimeMillis());
                 String extension = getFileExtension(selectedFile.getName());
                 String newFileName = "room_" + timestamp + extension;
                 
-                // Copy file to resources/images/ruangan/
                 Path sourcePath = selectedFile.toPath();
                 Path destinationPath = Paths.get(FOTO_DIR + newFileName);
                 
@@ -169,7 +168,6 @@ public class DaftarRuanganController {
                 
                 selectedFotoPath = newFileName;
                 
-                // Preview image
                 Image image = new Image(selectedFile.toURI().toString());
                 imgPreview.setImage(image);
                 
@@ -355,30 +353,35 @@ public class DaftarRuanganController {
                 return;
             }
             
-            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-            confirmAlert.setTitle("Konfirmasi Hapus");
-            confirmAlert.setHeaderText("Hapus Ruangan");
-            confirmAlert.setContentText("Yakin ingin menghapus ruangan " + 
-                                       selectedRuangan.getNamaRuangan() + "?");
+            StackPane root = MainApp.getRootContainer();
             
-            if (confirmAlert.showAndWait().get() == ButtonType.OK) {
-                // Delete foto file if exists
-                if (selectedRuangan.getFotoPath() != null) {
-                    try {
-                        Files.deleteIfExists(Paths.get(FOTO_DIR + selectedRuangan.getFotoPath()));
-                    } catch (IOException e) {
-                        System.err.println("⚠️ Failed to delete foto file: " + e.getMessage());
+            DialogUtil.showConfirmation(
+                "Konfirmasi Hapus",
+                "Yakin ingin menghapus ruangan " + selectedRuangan.getNamaRuangan() + "?",
+                root,
+                () -> {
+                    // On Confirm - Delete
+                    // Delete foto file if exists
+                    if (selectedRuangan.getFotoPath() != null) {
+                        try {
+                            Files.deleteIfExists(Paths.get(FOTO_DIR + selectedRuangan.getFotoPath()));
+                        } catch (IOException e) {
+                            System.err.println("⚠️ Failed to delete foto file: " + e.getMessage());
+                        }
                     }
+                    
+                    if (ruanganController.deleteRuangan(selectedRuangan.getId())) {
+                        showSuccess("Ruangan berhasil dihapus!");
+                        loadData();
+                        clearFields();
+                    } else {
+                        showError("Gagal menghapus ruangan!");
+                    }
+                },
+                () -> {
+                    System.out.println("Delete cancelled");
                 }
-                
-                if (ruanganController.deleteRuangan(selectedRuangan.getId())) {
-                    showSuccess("Ruangan berhasil dihapus!");
-                    loadData();
-                    clearFields();
-                } else {
-                    showError("Gagal menghapus ruangan!");
-                }
-            }
+            );
             
         } catch (Exception e) {
             System.err.println("❌ ERROR in handleHapus(): " + e.getMessage());
@@ -460,35 +463,39 @@ public class DaftarRuanganController {
     }
     
     private void showSuccess(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Sukses");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.SUCCESS,
+            "Sukses",
+            message,
+            MainApp.getRootContainer()
+        );
     }
-    
+
     private void showError(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setHeaderText("Terjadi Kesalahan");
-        alert.setContentText(message);
-        alert.showAndWait();
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.ERROR,
+            "Error",
+            message,
+            MainApp.getRootContainer()
+        );
     }
-    
+
     private void showWarning(String message) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("Peringatan");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.WARNING,
+            "Peringatan",
+            message,
+            MainApp.getRootContainer()
+        );
     }
-    
+
     private void showInfo(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Informasi");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.INFO,
+            "Informasi",
+            message,
+            MainApp.getRootContainer()
+        );
     }
     
     private void setupButtonEffect(Button button) {
