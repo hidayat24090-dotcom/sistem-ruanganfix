@@ -113,11 +113,15 @@ public class LaporanTransaksiController {
         chartRuangan.setLegendSide(Side.TOP);
         chartRuangan.setAnimated(true);
         
-        // FIXED: Pie chart configuration to prevent overflow
-        chartStatus.setLegendSide(Side.RIGHT);
+        // FIXED: Pie chart configuration - Legend di bawah agar tidak overflow
+        chartStatus.setLegendSide(Side.BOTTOM);
         chartStatus.setAnimated(true);
-        chartStatus.setLabelsVisible(true);
+        chartStatus.setLabelsVisible(false); // Hide labels untuk mencegah overflow
         chartStatus.setStartAngle(90);
+        chartStatus.setClockwise(true);
+        
+        // Set max size untuk mencegah chart terlalu besar
+        chartStatus.setMaxHeight(250);
         
         if (chartTrend != null) {
             chartTrend.setLegendSide(Side.TOP);
@@ -214,6 +218,9 @@ public class LaporanTransaksiController {
         }
     }
     
+    /**
+     * Update pie chart dengan warna yang sesuai
+     */
     private void updatePieChart() {
         try {
             Map<String, Integer> statusData = laporanController.getStatusPeminjamanData();
@@ -221,19 +228,19 @@ public class LaporanTransaksiController {
             
             int totalAll = statusData.values().stream().mapToInt(Integer::intValue).sum();
             
-            for (Map.Entry<String, Integer> entry : statusData.entrySet()) {
-                if (entry.getValue() > 0) {
-                    double percentage = (entry.getValue() * 100.0) / totalAll;
+            // FIXED: Urutan data harus konsisten dengan warna
+            String[] statusOrder = {"aktif", "selesai", "batal"};
+            
+            for (String status : statusOrder) {
+                Integer count = statusData.get(status);
+                if (count != null && count > 0) {
+                    double percentage = (count * 100.0) / totalAll;
                     
-                    // FIXED: Shorter label to prevent overflow
-                    String statusName = entry.getKey().toUpperCase();
-                    if (statusName.length() > 10) {
-                        statusName = statusName.substring(0, 8) + "..";
-                    }
+                    String displayName = status.toUpperCase();
                     
                     PieChart.Data data = new PieChart.Data(
-                        statusName + " (" + String.format("%.1f%%", percentage) + ")",
-                        entry.getValue()
+                        displayName + " (" + String.format("%.1f%%", percentage) + ")",
+                        count
                     );
                     pieChartData.add(data);
                 }
@@ -241,19 +248,26 @@ public class LaporanTransaksiController {
             
             chartStatus.setData(pieChartData);
             
+            // Apply colors setelah data di-set
             javafx.application.Platform.runLater(() -> {
+                int index = 0;
                 for (PieChart.Data data : chartStatus.getData()) {
-                    String color = getStatusColor(data.getName());
+                    String statusName = data.getName().split(" ")[0].toLowerCase();
+                    String color = getStatusColorFixed(statusName);
+                    
                     data.getNode().setStyle("-fx-pie-color: " + color + ";");
                     
-                    // Add tooltip for full information
+                    // Add tooltip
                     Tooltip tooltip = new Tooltip(data.getName() + ": " + (int)data.getPieValue() + " peminjaman");
                     Tooltip.install(data.getNode(), tooltip);
+                    
+                    index++;
                 }
             });
             
         } catch (Exception e) {
             System.err.println("❌ Error updating pie chart: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
@@ -285,6 +299,22 @@ public class LaporanTransaksiController {
         } catch (Exception e) {
             System.err.println("❌ Error updating line chart: " + e.getMessage());
         }
+    }
+    
+    /**
+     * Get warna status yang FIXED dan konsisten
+     */
+    private String getStatusColorFixed(String statusName) {
+        statusName = statusName.toLowerCase();
+        
+        if (statusName.contains("aktif")) {
+            return "#4facfe";  // Biru untuk Aktif
+        } else if (statusName.contains("selesai")) {
+            return "#43e97b";  // Hijau untuk Selesai
+        } else if (statusName.contains("batal")) {
+            return "#f5576c";  // Merah untuk Batal
+        }
+        return "#95a5a6";  // Abu-abu default
     }
     
     private String getStatusColor(String name) {

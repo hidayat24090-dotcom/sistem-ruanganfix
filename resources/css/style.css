@@ -527,3 +527,31 @@
     -fx-background-color: #2ecc71;
     background-color: #2ecc71;
 }
+
+/* ========== CHART STYLING ========== */
+/* Pie Chart Legend - Fixed Layout */
+.chart-legend {
+    -fx-padding: 10px;
+    -fx-background-color: transparent;
+}
+
+.chart-legend-item {
+    -fx-padding: 3px 5px;
+}
+
+.chart-legend-item-symbol {
+    -fx-padding: 5px;
+}
+
+.chart-legend-item .label {
+    -fx-font-size: 11px;
+}
+
+/* Pie Chart - Hide default labels untuk mencegah overflow */
+.chart-pie-label {
+    -fx-fill: transparent;
+}
+
+.chart-pie-label-line {
+    -fx-stroke: transparent;
+}

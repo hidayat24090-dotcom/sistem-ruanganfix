@@ -149,7 +149,7 @@
                            </columnConstraints>
                         </GridPane>
                         
-                        <!-- Charts Section -->
+                        <!-- Charts Section - FIXED GRID SIZING -->
                         <GridPane hgap="20.0" vgap="20.0">
                            <children>
                               <!-- Bar Chart -->
@@ -171,15 +171,19 @@
                                  </children>
                               </VBox>
                               
-                              <!-- Pie Chart -->
-                              <VBox spacing="10.0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 3);" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                              <!-- Pie Chart - FIXED LAYOUT -->
+                              <VBox spacing="10.0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 3);" GridPane.columnIndex="1" GridPane.rowIndex="0" VBox.vgrow="ALWAYS">
                                  <children>
                                     <Label text="🥧 Status Peminjaman">
                                        <font>
                                           <Font name="System Bold" size="15.0" />
                                        </font>
                                     </Label>
-                                    <PieChart fx:id="chartStatus" animated="true" legendVisible="true" prefHeight="200.0" VBox.vgrow="ALWAYS" />
+                                    <StackPane VBox.vgrow="ALWAYS">
+                                       <children>
+                                          <PieChart fx:id="chartStatus" animated="true" legendVisible="true" prefHeight="280.0" maxHeight="280.0" />
+                                       </children>
+                                    </StackPane>
                                  </children>
                               </VBox>
                               
@@ -203,11 +207,11 @@
                               </VBox>
                            </children>
                            <columnConstraints>
-                              <ColumnConstraints hgrow="SOMETIMES" minWidth="600.0" />
-                              <ColumnConstraints hgrow="SOMETIMES" minWidth="600.0" />
+                              <ColumnConstraints hgrow="SOMETIMES" minWidth="600.0" prefWidth="600.0" />
+                              <ColumnConstraints hgrow="SOMETIMES" minWidth="600.0" prefWidth="600.0" />
                            </columnConstraints>
                            <rowConstraints>
-                              <RowConstraints minHeight="350.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="380.0" prefHeight="380.0" vgrow="SOMETIMES" />
                               <RowConstraints minHeight="300.0" vgrow="SOMETIMES" />
                            </rowConstraints>
                         </GridPane>
