@@ -228,18 +228,26 @@ public class LaporanTransaksiController {
             
             int totalAll = statusData.values().stream().mapToInt(Integer::intValue).sum();
             
-            // FIXED: Urutan data harus konsisten dengan warna
-            String[] statusOrder = {"aktif", "selesai", "batal"};
+            if (totalAll == 0) {
+                System.out.println("⚠️ No data for pie chart");
+                return;
+            }
             
-            for (String status : statusOrder) {
+            // FIXED: Gunakan LinkedHashMap untuk urutan yang konsisten
+            java.util.LinkedHashMap<String, String> statusColorMap = new java.util.LinkedHashMap<>();
+            statusColorMap.put("aktif", "#4facfe");    // Biru
+            statusColorMap.put("selesai", "#43e97b");  // Hijau
+            statusColorMap.put("batal", "#f5576c");    // Merah
+            
+            // Add data dalam urutan yang SAMA dengan warna
+            for (String status : statusColorMap.keySet()) {
                 Integer count = statusData.get(status);
+                
                 if (count != null && count > 0) {
                     double percentage = (count * 100.0) / totalAll;
                     
-                    String displayName = status.toUpperCase();
-                    
                     PieChart.Data data = new PieChart.Data(
-                        displayName + " (" + String.format("%.1f%%", percentage) + ")",
+                        status.toUpperCase() + " (" + String.format("%.1f%%", percentage) + ")",
                         count
                     );
                     pieChartData.add(data);
@@ -253,13 +261,16 @@ public class LaporanTransaksiController {
                 int index = 0;
                 for (PieChart.Data data : chartStatus.getData()) {
                     String statusName = data.getName().split(" ")[0].toLowerCase();
-                    String color = getStatusColorFixed(statusName);
+                    String color = statusColorMap.getOrDefault(statusName, "#95a5a6");
                     
+                    // Apply color
                     data.getNode().setStyle("-fx-pie-color: " + color + ";");
                     
                     // Add tooltip
                     Tooltip tooltip = new Tooltip(data.getName() + ": " + (int)data.getPieValue() + " peminjaman");
                     Tooltip.install(data.getNode(), tooltip);
+                    
+                    System.out.println("🎨 Applied color " + color + " to " + statusName.toUpperCase());
                     
                     index++;
                 }
@@ -304,18 +315,6 @@ public class LaporanTransaksiController {
     /**
      * Get warna status yang FIXED dan konsisten
      */
-    private String getStatusColorFixed(String statusName) {
-        statusName = statusName.toLowerCase();
-        
-        if (statusName.contains("aktif")) {
-            return "#4facfe";  // Biru untuk Aktif
-        } else if (statusName.contains("selesai")) {
-            return "#43e97b";  // Hijau untuk Selesai
-        } else if (statusName.contains("batal")) {
-            return "#f5576c";  // Merah untuk Batal
-        }
-        return "#95a5a6";  // Abu-abu default
-    }
     
     private String getStatusColor(String name) {
         if (name.toLowerCase().contains("aktif")) {

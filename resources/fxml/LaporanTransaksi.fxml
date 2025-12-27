@@ -160,7 +160,7 @@
                                           <Font name="System Bold" size="15.0" />
                                        </font>
                                     </Label>
-                                    <BarChart fx:id="chartRuangan" animated="true" legendVisible="true" prefHeight="300.0" VBox.vgrow="ALWAYS">
+                                    <BarChart fx:id="chartRuangan" animated="false" legendVisible="true" prefHeight="300.0" VBox.vgrow="ALWAYS">
                                        <xAxis>
                                           <CategoryAxis label="Ruangan" side="BOTTOM" />
                                        </xAxis>
@@ -181,7 +181,7 @@
                                     </Label>
                                     <StackPane VBox.vgrow="ALWAYS">
                                        <children>
-                                          <PieChart fx:id="chartStatus" animated="true" legendVisible="true" prefHeight="280.0" maxHeight="280.0" />
+                                          <PieChart fx:id="chartStatus" animated="false" legendVisible="true" prefHeight="280.0" maxHeight="280.0" />
                                        </children>
                                     </StackPane>
                                  </children>
@@ -195,7 +195,7 @@
                                           <Font name="System Bold" size="15.0" />
                                        </font>
                                     </Label>
-                                    <LineChart fx:id="chartTrend" animated="true" legendVisible="true" prefHeight="250.0" VBox.vgrow="ALWAYS">
+                                    <LineChart fx:id="chartTrend" animated="false" legendVisible="true" prefHeight="250.0" VBox.vgrow="ALWAYS">
                                        <xAxis>
                                           <CategoryAxis label="Bulan" side="BOTTOM" />
                                        </xAxis>
