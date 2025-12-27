@@ -4,6 +4,7 @@ import com.sistemruangan.MainApp;
 import com.sistemruangan.controller.PeminjamanController;
 import com.sistemruangan.model.Peminjaman;
 import com.sistemruangan.util.SessionManager;
+import com.sistemruangan.util.DialogUtil;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
@@ -11,6 +12,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 
 import java.time.LocalDate;
 
@@ -196,41 +198,43 @@ public class UserRiwayatController {
      * Handle batalkan peminjaman
      */
     private void handleBatalkan(Peminjaman peminjaman) {
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Konfirmasi Pembatalan");
-        confirm.setHeaderText("Batalkan Peminjaman");
-        confirm.setContentText("Yakin ingin membatalkan peminjaman ruangan " + 
-                              peminjaman.getNamaRuangan() + "?");
+        StackPane root = MainApp.getRootContainer();
         
-        if (confirm.showAndWait().get() == ButtonType.OK) {
-            if (peminjamanController.batalkanPeminjaman(peminjaman.getId(), peminjaman.getIdRuangan())) {
-                showAlert(Alert.AlertType.INFORMATION, "Berhasil", 
-                         "Peminjaman berhasil dibatalkan!");
-                loadData();
-            } else {
-                showAlert(Alert.AlertType.ERROR, "Gagal", 
-                         "Gagal membatalkan peminjaman!");
-            }
-        }
+        DialogUtil.showConfirmation(
+            "Konfirmasi Pembatalan",
+            "Yakin ingin membatalkan peminjaman ruangan " + peminjaman.getNamaRuangan() + "?",
+            root,
+            () -> {
+                if (peminjamanController.batalkanPeminjaman(peminjaman.getId(), peminjaman.getIdRuangan())) {
+                    showSuccess("Peminjaman berhasil dibatalkan!");
+                    loadData();
+                } else {
+                    showError("Gagal membatalkan peminjaman!");
+                }
+            },
+            null
+        );
     }
     
     /**
      * Handle detail peminjaman
      */
     private void handleDetail(Peminjaman peminjaman) {
-        Alert detail = new Alert(Alert.AlertType.INFORMATION);
-        detail.setTitle("Detail Peminjaman");
-        detail.setHeaderText("Informasi Lengkap Peminjaman");
+        StackPane root = MainApp.getRootContainer();
         
         StringBuilder content = new StringBuilder();
-        content.append("Ruangan: ").append(peminjaman.getNamaRuangan()).append("\n");
-        content.append("Keperluan: ").append(peminjaman.getKeperluan()).append("\n");
-        content.append("Tanggal Pinjam: ").append(peminjaman.getTanggalPinjam()).append("\n");
-        content.append("Tanggal Kembali: ").append(peminjaman.getTanggalKembali()).append("\n");
-        content.append("Status: ").append(peminjaman.getStatusPeminjaman()).append("\n");
+        content.append("Ruangan: ").append(peminjaman.getNamaRuangan()).append("\n\n");
+        content.append("Keperluan: ").append(peminjaman.getKeperluan()).append("\n\n");
+        content.append("Tanggal Pinjam: ").append(peminjaman.getTanggalPinjam()).append("\n\n");
+        content.append("Tanggal Kembali: ").append(peminjaman.getTanggalKembali()).append("\n\n");
+        content.append("Status: ").append(peminjaman.getStatusPeminjaman().toUpperCase());
         
-        detail.setContentText(content.toString());
-        detail.showAndWait();
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.INFO,
+            "Detail Peminjaman",
+            content.toString(),
+            root
+        );
     }
     
     @FXML
@@ -279,10 +283,41 @@ public class UserRiwayatController {
      * Show alert dialog
      */
     private void showAlert(Alert.AlertType type, String title, String message) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        StackPane root = MainApp.getRootContainer();
+        
+        DialogUtil.DialogType dialogType;
+        switch (type) {
+            case INFORMATION:
+                dialogType = DialogUtil.DialogType.SUCCESS;
+                break;
+            case WARNING:
+                dialogType = DialogUtil.DialogType.WARNING;
+                break;
+            case ERROR:
+                dialogType = DialogUtil.DialogType.ERROR;
+                break;
+            default:
+                dialogType = DialogUtil.DialogType.INFO;
+        }
+        
+        DialogUtil.showDialog(dialogType, title, message, root);
+    }
+
+    private void showSuccess(String message) {
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.SUCCESS,
+            "Berhasil",
+            message,
+            MainApp.getRootContainer()
+        );
+    }
+
+    private void showError(String message) {
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.ERROR,
+            "Error",
+            message,
+            MainApp.getRootContainer()
+        );
     }
 }

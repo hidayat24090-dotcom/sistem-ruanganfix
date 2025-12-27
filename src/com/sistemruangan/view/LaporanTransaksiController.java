@@ -3,6 +3,7 @@ package com.sistemruangan.view;
 import com.sistemruangan.MainApp;
 import com.sistemruangan.controller.LaporanController;
 import com.sistemruangan.model.StatistikRuangan;
+import com.sistemruangan.util.DialogUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -640,18 +641,20 @@ public class LaporanTransaksiController {
     }
     
     private void showSuccess(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Berhasil");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.SUCCESS,
+            "Berhasil",
+            message,
+            MainApp.getRootContainer()
+        );
     }
     
     private void showError(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.ERROR,
+            "Error",
+            message,
+            MainApp.getRootContainer()
+        );
     }
 }

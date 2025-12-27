@@ -4,9 +4,11 @@ import com.sistemruangan.MainApp;
 import com.sistemruangan.controller.UserController;
 import com.sistemruangan.model.User;
 import com.sistemruangan.util.SessionManager;
+import com.sistemruangan.util.DialogUtil;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 
 /**
  * Controller untuk halaman Profile User
@@ -256,11 +258,24 @@ public class UserProfileController {
      * Show alert dialog
      */
     private void showAlert(Alert.AlertType type, String title, String message) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        StackPane root = MainApp.getRootContainer();
+        
+        DialogUtil.DialogType dialogType;
+        switch (type) {
+            case INFORMATION:
+                dialogType = DialogUtil.DialogType.SUCCESS;
+                break;
+            case WARNING:
+                dialogType = DialogUtil.DialogType.WARNING;
+                break;
+            case ERROR:
+                dialogType = DialogUtil.DialogType.ERROR;
+                break;
+            default:
+                dialogType = DialogUtil.DialogType.INFO;
+        }
+        
+        DialogUtil.showDialog(dialogType, title, message, root);
     }
     
     @FXML

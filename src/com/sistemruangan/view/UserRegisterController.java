@@ -3,6 +3,8 @@ package com.sistemruangan.view;
 import com.sistemruangan.MainApp;
 import com.sistemruangan.controller.UserController;
 import com.sistemruangan.model.User;
+import com.sistemruangan.util.DialogUtil;
+import javafx.scene.layout.StackPane;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
@@ -157,23 +159,36 @@ public class UserRegisterController {
      * Menampilkan pesan error
      */
     private void showError(String message) {
-        errorLabel.setText(message);
-        errorLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-        errorLabel.setVisible(true);
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.ERROR,
+            "Error Validasi",
+            message,
+            MainApp.getRootContainer()
+        );
     }
     
     /**
      * Menampilkan pesan sukses
      */
     private void showSuccess() {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Registrasi Berhasil");
-        alert.setHeaderText(null);
-        alert.setContentText("Akun berhasil dibuat! Silakan login dengan username dan password Anda.");
-        alert.showAndWait();
+        StackPane root = MainApp.getRootContainer();
         
-        // Kembali ke halaman login
-        MainApp.showUserLogin();
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.SUCCESS,
+            "Registrasi Berhasil",
+            "Akun berhasil dibuat! Silakan login dengan username dan password Anda.",
+            root
+        );
+        
+        // Delay before redirect
+        javafx.application.Platform.runLater(() -> {
+            try {
+                Thread.sleep(1500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            MainApp.showUserLogin();
+        });
     }
     
     @FXML

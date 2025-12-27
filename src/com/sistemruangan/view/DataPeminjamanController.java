@@ -5,6 +5,8 @@ import com.sistemruangan.controller.PeminjamanController;
 import com.sistemruangan.controller.RuanganController;
 import com.sistemruangan.model.Peminjaman;
 import com.sistemruangan.model.Ruangan;
+import com.sistemruangan.util.DialogUtil;
+import javafx.scene.layout.StackPane;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -150,59 +152,65 @@ public class DataPeminjamanController {
     @FXML
     private void handleSelesai() {
         if (selectedPeminjaman == null) {
-            showAlert(Alert.AlertType.WARNING, "Peringatan", "Pilih peminjaman yang akan diselesaikan!");
+            showWarning("Pilih peminjaman yang akan diselesaikan!");
             return;
         }
         
         if (!"aktif".equalsIgnoreCase(selectedPeminjaman.getStatusPeminjaman())) {
-            showAlert(Alert.AlertType.WARNING, "Peringatan", "Hanya peminjaman aktif yang dapat diselesaikan!");
+            showWarning("Hanya peminjaman aktif yang dapat diselesaikan!");
             return;
         }
         
-        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmAlert.setTitle("Konfirmasi Selesai");
-        confirmAlert.setHeaderText("Selesaikan Peminjaman");
-        confirmAlert.setContentText(new StringBuilder("Yakin menyelesaikan peminjaman ini?").toString());
+        StackPane root = MainApp.getRootContainer();
         
-        if (confirmAlert.showAndWait().get() == ButtonType.OK) {
-            if (peminjamanController.selesaikanPeminjaman(selectedPeminjaman.getId(), selectedPeminjaman.getIdRuangan())) {
-                showAlert(Alert.AlertType.INFORMATION, "Sukses", "Peminjaman berhasil diselesaikan!");
-                loadData();
-                loadRuanganTersedia();
-                clearFields();
-            } else {
-                showAlert(Alert.AlertType.ERROR, "Error", "Gagal menyelesaikan peminjaman!");
-            }
-        }
+        DialogUtil.showConfirmation(
+            "Konfirmasi Selesai",
+            "Yakin menyelesaikan peminjaman ini?",
+            root,
+            () -> {
+                if (peminjamanController.selesaikanPeminjaman(selectedPeminjaman.getId(), selectedPeminjaman.getIdRuangan())) {
+                    showSuccess("Peminjaman berhasil diselesaikan!");
+                    loadData();
+                    loadRuanganTersedia();
+                    clearFields();
+                } else {
+                    showError("Gagal menyelesaikan peminjaman!");
+                }
+            },
+            null
+        );
     }
     
     @FXML
     private void handleBatal() {
         if (selectedPeminjaman == null) {
-            showAlert(Alert.AlertType.WARNING, "Peringatan", "Pilih peminjaman yang akan dibatalkan!");
+            showWarning("Pilih peminjaman yang akan dibatalkan!");
             return;
         }
         
         if (!"aktif".equalsIgnoreCase(selectedPeminjaman.getStatusPeminjaman())) {
-            showAlert(Alert.AlertType.WARNING, "Peringatan", "Hanya peminjaman aktif yang dapat dibatalkan!");
+            showWarning("Hanya peminjaman aktif yang dapat dibatalkan!");
             return;
         }
         
-        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmAlert.setTitle("Konfirmasi Batal");
-        confirmAlert.setHeaderText("Batalkan Peminjaman");
-        confirmAlert.setContentText(new StringBuilder("Yakin membatalkan peminjaman ini?").toString());
+        StackPane root = MainApp.getRootContainer();
         
-        if (confirmAlert.showAndWait().get() == ButtonType.OK) {
-            if (peminjamanController.batalkanPeminjaman(selectedPeminjaman.getId(), selectedPeminjaman.getIdRuangan())) {
-                showAlert(Alert.AlertType.INFORMATION, "Sukses", "Peminjaman berhasil dibatalkan!");
-                loadData();
-                loadRuanganTersedia();
-                clearFields();
-            } else {
-                showAlert(Alert.AlertType.ERROR, "Error", "Gagal membatalkan peminjaman!");
-            }
-        }
+        DialogUtil.showConfirmation(
+            "Konfirmasi Batal",
+            "Yakin membatalkan peminjaman ini?",
+            root,
+            () -> {
+                if (peminjamanController.batalkanPeminjaman(selectedPeminjaman.getId(), selectedPeminjaman.getIdRuangan())) {
+                    showSuccess("Peminjaman berhasil dibatalkan!");
+                    loadData();
+                    loadRuanganTersedia();
+                    clearFields();
+                } else {
+                    showError("Gagal membatalkan peminjaman!");
+                }
+            },
+            null
+        );
     }
     
     @FXML
@@ -269,11 +277,51 @@ public class DataPeminjamanController {
      * Show alert dialog
      */
     private void showAlert(Alert.AlertType type, String title, String message) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        StackPane root = MainApp.getRootContainer();
+        
+        DialogUtil.DialogType dialogType;
+        switch (type) {
+            case INFORMATION:
+                dialogType = DialogUtil.DialogType.SUCCESS;
+                break;
+            case WARNING:
+                dialogType = DialogUtil.DialogType.WARNING;
+                break;
+            case ERROR:
+                dialogType = DialogUtil.DialogType.ERROR;
+                break;
+            default:
+                dialogType = DialogUtil.DialogType.INFO;
+        }
+        
+        DialogUtil.showDialog(dialogType, title, message, root);
+    }
+
+    private void showSuccess(String message) {
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.SUCCESS,
+            "Berhasil",
+            message,
+            MainApp.getRootContainer()
+        );
+    }
+
+    private void showError(String message) {
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.ERROR,
+            "Error",
+            message,
+            MainApp.getRootContainer()
+        );
+    }
+
+    private void showWarning(String message) {
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.WARNING,
+            "Peringatan",
+            message,
+            MainApp.getRootContainer()
+        );
     }
     
     /**

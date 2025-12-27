@@ -4,6 +4,7 @@ import com.sistemruangan.MainApp;
 import com.sistemruangan.controller.UserController;
 import com.sistemruangan.model.User;
 import com.sistemruangan.util.SessionManager;
+import com.sistemruangan.util.DialogUtil;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
@@ -72,8 +73,12 @@ public class UserLoginController {
      * Menampilkan pesan error
      */
     private void showError(String message) {
-        errorLabel.setText(message);
-        errorLabel.setVisible(true);
+        DialogUtil.showDialog(
+            DialogUtil.DialogType.ERROR,
+            "Error",
+            message,
+            MainApp.getRootContainer()
+        );
     }
     
     @FXML
