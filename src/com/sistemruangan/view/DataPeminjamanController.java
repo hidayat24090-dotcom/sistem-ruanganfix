@@ -15,6 +15,7 @@ import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 /**
  * Controller untuk halaman Data Peminjaman
@@ -28,6 +29,8 @@ public class DataPeminjamanController {
     @FXML private TableColumn<Peminjaman, String> colKeperluan;
     @FXML private TableColumn<Peminjaman, LocalDate> colTglPinjam;
     @FXML private TableColumn<Peminjaman, LocalDate> colTglKembali;
+    @FXML private TableColumn<Peminjaman, LocalTime> colJamMulai;
+    @FXML private TableColumn<Peminjaman, LocalTime> colJamSelesai;
     @FXML private TableColumn<Peminjaman, String> colStatus;
     
     @FXML private ComboBox<Ruangan> cbRuangan;
@@ -60,6 +63,8 @@ public class DataPeminjamanController {
         colKeperluan.setCellValueFactory(new PropertyValueFactory<>("keperluan"));
         colTglPinjam.setCellValueFactory(new PropertyValueFactory<>("tanggalPinjam"));
         colTglKembali.setCellValueFactory(new PropertyValueFactory<>("tanggalKembali"));
+        colJamMulai.setCellValueFactory(new PropertyValueFactory<>("jamMulai"));
+        colJamSelesai.setCellValueFactory(new PropertyValueFactory<>("jamSelesai"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("statusPeminjaman"));
         
         // Load ruangan yang tersedia
@@ -74,7 +79,7 @@ public class DataPeminjamanController {
         
         // Setup table selection
         tablePeminjaman.getSelectionModel().selectedItemProperty().addListener(
-            (_, _, newSelection) -> {
+            (obser, oldSelection, newSelection) -> {
                 if (newSelection != null) {
                     selectedPeminjaman = newSelection;
                 }
@@ -331,7 +336,7 @@ public class DataPeminjamanController {
         DropShadow shadow = new DropShadow();
         shadow.setColor(Color.web("#5B9BD5"));
         
-        button.setOnMouseEntered(_ -> button.setEffect(shadow));
-        button.setOnMouseExited(_ -> button.setEffect(null));
+        button.setOnMouseEntered(event -> button.setEffect(shadow));
+        button.setOnMouseExited(event -> button.setEffect(null));
     }
 }

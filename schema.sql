@@ -36,9 +36,20 @@ CREATE TABLE user (
 -- ========================================
 -- 3. TABEL RUANGAN (WITH PHOTO SUPPORT)
 -- ========================================
+CREATE TABLE gedung (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nama_gedung VARCHAR(100) NOT NULL UNIQUE,
+    jumlah_lantai INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_nama (nama_gedung)
+) ENGINE=InnoDB;
+
 CREATE TABLE ruangan (
     id INT PRIMARY KEY AUTO_INCREMENT,
+    id_gedung INT,
     nama_ruangan VARCHAR(100) NOT NULL UNIQUE,
+    lantai INT NOT NULL DEFAULT 1, -- Added lantai column
     jumlah_kursi INT NOT NULL,
     fasilitas TEXT,  -- Comma-separated fasilitas
     status ENUM('tersedia', 'dipinjam') DEFAULT 'tersedia',
@@ -46,7 +57,9 @@ CREATE TABLE ruangan (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_status (status),
-    INDEX idx_nama (nama_ruangan)
+    INDEX idx_nama (nama_ruangan),
+    INDEX idx_lantai (lantai), -- Added index for lantai
+    FOREIGN KEY (id_gedung) REFERENCES gedung(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- ========================================
@@ -58,16 +71,18 @@ CREATE TABLE peminjaman (
     id_ruangan INT NOT NULL,
     nama_peminjam VARCHAR(100) NOT NULL,
     keperluan TEXT NOT NULL,
-    jenis_kegiatan ENUM('kuliah', 'lainnya') DEFAULT 'kuliah',  -- NEW: jenis kegiatan
-    penjelasan_kegiatan TEXT,  -- NEW: detail untuk non-kuliah
-    surat_path VARCHAR(255),  -- NEW: path surat permohonan
+    jenis_kegiatan ENUM('kuliah', 'lainnya') DEFAULT 'kuliah',
+    penjelasan_kegiatan TEXT,
+    surat_path VARCHAR(255),
     tanggal_pinjam DATE NOT NULL,
     tanggal_kembali DATE NOT NULL,
+    jam_mulai TIME NOT NULL DEFAULT '08:00:00', -- Ditambahkan agar sesuai plan
+    jam_selesai TIME NOT NULL DEFAULT '16:00:00', -- Ditambahkan agar sesuai plan
     status_peminjaman ENUM('aktif', 'selesai', 'batal') DEFAULT 'aktif',
-    status_approval ENUM('pending', 'approved', 'rejected') DEFAULT 'approved',  -- NEW: approval system
-    keterangan_approval TEXT,  -- NEW: keterangan dari admin
-    approved_by VARCHAR(100),  -- NEW: admin yang approve
-    approved_at DATETIME,  -- NEW: waktu approve
+    status_approval ENUM('pending', 'approved', 'rejected') DEFAULT 'approved',
+    keterangan_approval TEXT,
+    approved_by VARCHAR(100),
+    approved_at DATETIME,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (id_user) REFERENCES user(id) ON DELETE SET NULL,
@@ -114,6 +129,7 @@ SELECT
     YEAR(p.tanggal_pinjam) as tahun,
     MONTH(p.tanggal_pinjam) as bulan,
     MONTHNAME(p.tanggal_pinjam) as nama_bulan,
+    TIME(p.tanggal_pinjam) as waktu_pinjam,
     r.nama_ruangan,
     COUNT(*) as jumlah_peminjaman,
     SUM(CASE WHEN p.status_peminjaman = 'aktif' THEN 1 ELSE 0 END) as aktif,
@@ -127,7 +143,7 @@ ORDER BY tahun DESC, bulan DESC;
 -- View: Ruangan Populer
 CREATE OR REPLACE VIEW v_ruangan_populer AS
 SELECT 
-    r.nama_ruangan,
+    r.id, r.nama_ruangan,
     COUNT(p.id) as total_peminjaman,
     SUM(CASE WHEN p.status_peminjaman = 'selesai' THEN 1 ELSE 0 END) as berhasil,
     ROUND((COUNT(p.id) * 100.0 / NULLIF((SELECT COUNT(*) FROM peminjaman), 0)), 2) as persentase
@@ -154,19 +170,28 @@ INSERT INTO user (username, password, nama_lengkap, email, no_telepon) VALUES
 ('doni', 'user123', 'Doni Prasetyo', 'doni.prasetyo@email.com', '085678901234');
 
 -- ========================================
--- 8. DATA DUMMY - RUANGAN
+-- 8. DATA DUMMY - GEDUNG
 -- ========================================
-INSERT INTO ruangan (nama_ruangan, jumlah_kursi, fasilitas, status, foto_path) VALUES 
-('Ruang A101', 30, 'Proyektor (baik), HDMI (baik), AC, Whiteboard, Kursi Lipat', 'tersedia', NULL),
-('Ruang A102', 25, 'Proyektor (baik), HDMI (baik), AC, Whiteboard', 'tersedia', NULL),
-('Ruang B201', 40, 'Proyektor (rusak), HDMI (baik), AC, Whiteboard, Sound System', 'tersedia', NULL),
-('Ruang B202', 35, 'Proyektor (baik), HDMI (baik), AC, Whiteboard', 'dipinjam', NULL),
-('Ruang Seminar 1', 100, 'Proyektor (baik), HDMI (baik), AC, Sound System, Mic Wireless, Kursi Auditorium', 'tersedia', NULL),
-('Ruang Seminar 2', 80, 'Proyektor (baik), HDMI (baik), AC, Sound System, Kursi Auditorium', 'tersedia', NULL),
-('Lab Komputer 1', 40, 'Proyektor (baik), HDMI (baik), AC, 40 Unit PC, Whiteboard', 'tersedia', NULL),
-('Lab Komputer 2', 35, 'Proyektor (baik), HDMI (baik), AC, 35 Unit PC, Whiteboard', 'tersedia', NULL),
-('Aula Utama', 200, 'Proyektor (baik), HDMI (baik), AC Central, Sound System Premium, Panggung, Lighting', 'tersedia', NULL),
-('Ruang Rapat Kecil', 12, 'TV LED, HDMI (baik), AC, Meja Meeting Oval', 'tersedia', NULL);
+INSERT INTO gedung (nama_gedung, jumlah_lantai) VALUES 
+('Gedung A', 4),
+('Gedung B', 3),
+('Gedung C', 5),
+('Gedung D', 5),
+('Gedung E', 4);
+-- ========================================
+-- 9. DATA DUMMY - RUANGAN
+-- ========================================
+INSERT INTO ruangan (id_gedung, nama_ruangan, lantai, jumlah_kursi, fasilitas, status, foto_path) VALUES 
+(1, 'Ruang A101', 1, 30, 'Proyektor (baik), HDMI (baik), AC, Whiteboard, Kursi Lipat', 'tersedia', NULL),
+(1, 'Ruang A201', 2, 25, 'Proyektor (baik), HDMI (baik), AC, Whiteboard', 'tersedia', NULL),
+(2, 'Ruang B101', 1, 40, 'Proyektor (rusak), HDMI (baik), AC, Whiteboard, Sound System', 'tersedia', NULL),
+(2, 'Ruang B202', 2, 35, 'Proyektor (baik), HDMI (baik), AC, Whiteboard', 'dipinjam', NULL),
+(3, 'Ruang Seminar 1', 1, 100, 'Proyektor (baik), HDMI (baik), AC, Sound System, Mic Wireless, Kursi Auditorium', 'tersedia', NULL),
+(3, 'Ruang Seminar 2', 2, 80, 'Proyektor (baik), HDMI (baik), AC, Sound System, Kursi Auditorium', 'tersedia', NULL),
+(4, 'Lab Komputer 1', 1, 40, 'Proyektor (baik), HDMI (baik), AC, 40 Unit PC, Whiteboard', 'tersedia', NULL),
+(4, 'Lab Komputer 2', 2, 35, 'Proyektor (baik), HDMI (baik), AC, 35 Unit PC, Whiteboard', 'tersedia', NULL),
+(5, 'Aula Utama', 1, 200, 'Proyektor (baik), HDMI (baik), AC Central, Sound System Premium, Panggung, Lighting', 'tersedia', NULL),
+(5, 'Ruang Rapat Kecil', 2, 12, 'TV LED, HDMI (baik), AC, Meja Meeting Oval', 'tersedia', NULL);
 
 -- ========================================
 -- 9. DATA DUMMY - PEMINJAMAN (MIXED DATA)
@@ -210,7 +235,7 @@ INSERT INTO peminjaman (id_user, id_ruangan, nama_peminjam, keperluan, jenis_keg
 -- Query untuk mengecek data
 SELECT 'ADMIN COUNT' as info, COUNT(*) as jumlah FROM admin
 UNION ALL
-SELECT 'USER COUNT', COUNT(*) FROM user
+SELECT 'USER COUNT', COUNT(*) FROM user 
 UNION ALL
 SELECT 'RUANGAN COUNT', COUNT(*) FROM ruangan
 UNION ALL

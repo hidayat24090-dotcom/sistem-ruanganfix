@@ -43,22 +43,45 @@
                            </children>
                         </VBox>
                         
-                        <!-- Ruangan -->
-                        <VBox spacing="5.0">
+                        <!-- Gedung & Ruangan -->
+                        <HBox spacing="15.0">
                            <children>
-                              <Label text="Pilih Ruangan: *" style="-fx-font-weight: bold;" />
-                              <ComboBox fx:id="cbRuangan" maxWidth="Infinity" 
-                                        promptText="Pilih ruangan" 
-                                        onAction="#handleRuanganChange" />
-                              <VBox fx:id="vboxInfoRuangan" visible="false" managed="false"
-                                    style="-fx-background-color: #f0f0f0; -fx-padding: 8;">
+                              <VBox spacing="5.0" HBox.hgrow="ALWAYS">
                                  <children>
-                                    <Label text="Info Ruangan:" style="-fx-font-weight: bold;" />
-                                    <Label fx:id="lblKapasitas" text="Kapasitas: -" />
-                                    <Label fx:id="lblProyektor" text="Proyektor: -" />
-                                    <Label fx:id="lblHdmi" text="HDMI: -" />
+                                    <Label text="Pilih Gedung: *" style="-fx-font-weight: bold;" />
+                                    <ComboBox fx:id="cbGedung" maxWidth="Infinity" 
+                                              promptText="Pilih gedung" 
+                                              onAction="#handleGedungChange" />
                                  </children>
                               </VBox>
+                              <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Label text="Pilih Ruangan: *" style="-fx-font-weight: bold;" />
+                                    <ComboBox fx:id="cbRuangan" maxWidth="Infinity" 
+                                              promptText="Pilih ruangan (Pilih gedung dulu)" 
+                                              onAction="#handleRuanganChange" />
+                                 </children>
+                              </VBox>
+                           </children>
+                        </HBox>
+                        
+                        <VBox fx:id="vboxInfoRuangan" visible="false" managed="false"
+                              style="-fx-background-color: #f0f0f0; -fx-padding: 10; -fx-background-radius: 5;">
+                           <children>
+                              <Label text="📍 Detail Ruangan" style="-fx-font-weight: bold; -fx-text-fill: #5B9BD5;" />
+                              <GridPane hgap="10" vgap="5">
+                                 <columnConstraints>
+                                    <ColumnConstraints minWidth="80" />
+                                    <ColumnConstraints hgrow="ALWAYS" />
+                                 </columnConstraints>
+                                 <children>
+                                    <Label text="Kapasitas" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                    <Label fx:id="lblKapasitas" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0" style="-fx-font-weight: bold;" />
+                                    
+                                    <Label text="Fasilitas" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                    <VBox fx:id="vboxFasilitas" GridPane.columnIndex="1" GridPane.rowIndex="1" spacing="2" />
+                                 </children>
+                              </GridPane>
                            </children>
                         </VBox>
                         
@@ -128,25 +151,58 @@
                            </children>
                         </VBox>
                         
-                        <!-- Tanggal -->
-                        <HBox spacing="15.0">
+                        <!-- Tanggal & Waktu Pinjam -->
+                        <VBox spacing="10.0">
                            <children>
-                              <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                              <HBox spacing="15.0">
                                  <children>
-                                    <Label text="Tanggal Pinjam: *" style="-fx-font-weight: bold;" />
-                                    <DatePicker fx:id="dpTglPinjam" maxWidth="Infinity" 
-                                                onAction="#handleDateChange" />
+                                    <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                       <children>
+                                          <Label text="Tanggal Pinjam: *" style="-fx-font-weight: bold;" />
+                                          <DatePicker fx:id="dpTglPinjam" maxWidth="Infinity" 
+                                                      onAction="#handleDateChange" />
+                                       </children>
+                                    </VBox>
+                                    <VBox spacing="5.0" prefWidth="250.0">
+                                       <children>
+                                          <Label text="Jam Mulai: *" style="-fx-font-weight: bold;" />
+                                          <HBox spacing="5.0" alignment="CENTER_LEFT">
+                                             <children>
+                                                <ComboBox fx:id="cbJamMulai" prefWidth="80.0" promptText="HH" />
+                                                <Label text=":" />
+                                                <ComboBox fx:id="cbMenitMulai" prefWidth="80.0" promptText="mm" />
+                                             </children>
+                                          </HBox>
+                                       </children>
+                                    </VBox>
                                  </children>
-                              </VBox>
-                              <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                              </HBox>
+                              
+                              <HBox spacing="15.0">
                                  <children>
-                                    <Label text="Tanggal Kembali: *" style="-fx-font-weight: bold;" />
-                                    <DatePicker fx:id="dpTglKembali" maxWidth="Infinity"
-                                                onAction="#handleDateChange" />
+                                    <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                       <children>
+                                          <Label text="Tanggal Kembali: *" style="-fx-font-weight: bold;" />
+                                          <DatePicker fx:id="dpTglKembali" maxWidth="Infinity"
+                                                      onAction="#handleDateChange" />
+                                       </children>
+                                    </VBox>
+                                    <VBox spacing="5.0" prefWidth="250.0">
+                                       <children>
+                                          <Label text="Jam Selesai: *" style="-fx-font-weight: bold;" />
+                                          <HBox spacing="5.0" alignment="CENTER_LEFT">
+                                             <children>
+                                                <ComboBox fx:id="cbJamSelesai" prefWidth="80.0" promptText="HH" />
+                                                <Label text=":" />
+                                                <ComboBox fx:id="cbMenitSelesai" prefWidth="80.0" promptText="mm" />
+                                             </children>
+                                          </HBox>
+                                       </children>
+                                    </VBox>
                                  </children>
-                              </VBox>
+                              </HBox>
                            </children>
-                        </HBox>
+                        </VBox>
                         
                         <!-- Durasi Info -->
                         <HBox fx:id="hboxDurasi" spacing="10.0" visible="false"

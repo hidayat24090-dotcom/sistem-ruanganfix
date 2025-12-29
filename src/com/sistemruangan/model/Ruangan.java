@@ -10,23 +10,34 @@ public class Ruangan {
     private final StringProperty namaRuangan;
     private final IntegerProperty jumlahKursi;
     private final StringProperty fasilitas;
+    private final IntegerProperty idGedung;
+    private final StringProperty namaGedung;
     private final StringProperty status;
+    private final IntegerProperty lantai; // NEW: Lantai column
     private final StringProperty fotoPath; // NEW: Path to photo
     
     // Constructor
     public Ruangan() {
-        this(0, "", 0, "", "tersedia", null);
+        this(0, 0, "", "", 1, 0, "", "tersedia", null);
     }
     
-    public Ruangan(int id, String namaRuangan, int jumlahKursi, 
+    public Ruangan(int id, int idGedung, String namaRuangan, int lantai, int jumlahKursi, 
                    String fasilitas, String status) {
-        this(id, namaRuangan, jumlahKursi, fasilitas, status, null);
+        this(id, idGedung, "", namaRuangan, lantai, jumlahKursi, fasilitas, status, null);
     }
     
-    public Ruangan(int id, String namaRuangan, int jumlahKursi, 
+    public Ruangan(int id, int idGedung, String namaRuangan, int lantai, int jumlahKursi, 
+                   String fasilitas, String status, String fotoPath) {
+        this(id, idGedung, "", namaRuangan, lantai, jumlahKursi, fasilitas, status, fotoPath);
+    }
+    
+    public Ruangan(int id, int idGedung, String namaGedung, String namaRuangan, int lantai, int jumlahKursi, 
                    String fasilitas, String status, String fotoPath) {
         this.id = new SimpleIntegerProperty(id);
+        this.idGedung = new SimpleIntegerProperty(idGedung);
+        this.namaGedung = new SimpleStringProperty(namaGedung);
         this.namaRuangan = new SimpleStringProperty(namaRuangan);
+        this.lantai = new SimpleIntegerProperty(lantai);
         this.jumlahKursi = new SimpleIntegerProperty(jumlahKursi);
         this.fasilitas = new SimpleStringProperty(fasilitas != null ? fasilitas : "");
         this.status = new SimpleStringProperty(status);
@@ -38,9 +49,21 @@ public class Ruangan {
     public void setId(int value) { id.set(value); }
     public IntegerProperty idProperty() { return id; }
     
+    public int getIdGedung() { return idGedung.get(); }
+    public void setIdGedung(int value) { idGedung.set(value); }
+    public IntegerProperty idGedungProperty() { return idGedung; }
+    
+    public String getNamaGedung() { return namaGedung.get(); }
+    public void setNamaGedung(String value) { namaGedung.set(value); }
+    public StringProperty namaGedungProperty() { return namaGedung; }
+    
     public String getNamaRuangan() { return namaRuangan.get(); }
     public void setNamaRuangan(String value) { namaRuangan.set(value); }
     public StringProperty namaRuanganProperty() { return namaRuangan; }
+    
+    public int getLantai() { return lantai.get(); }
+    public void setLantai(int value) { lantai.set(value); }
+    public IntegerProperty lantaiProperty() { return lantai; }
     
     public int getJumlahKursi() { return jumlahKursi.get(); }
     public void setJumlahKursi(int value) { jumlahKursi.set(value); }

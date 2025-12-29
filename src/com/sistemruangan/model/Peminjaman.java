@@ -3,6 +3,7 @@ package com.sistemruangan.model;
 import javafx.beans.property.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 /**
  * Model class untuk Peminjaman - WITH APPROVAL SYSTEM
@@ -18,6 +19,8 @@ public class Peminjaman {
     private final StringProperty suratPath; // NEW: path surat
     private final ObjectProperty<LocalDate> tanggalPinjam;
     private final ObjectProperty<LocalDate> tanggalKembali;
+    private final ObjectProperty<LocalTime> jamMulai; // NEW: jam mulai
+    private final ObjectProperty<LocalTime> jamSelesai; // NEW: jam selesai
     private final StringProperty statusPeminjaman;
     private final StringProperty statusApproval; // NEW: pending / approved / rejected
     private final StringProperty keteranganApproval; // NEW: keterangan dari admin
@@ -43,6 +46,8 @@ public class Peminjaman {
         this.suratPath = new SimpleStringProperty("");
         this.tanggalPinjam = new SimpleObjectProperty<>(tanggalPinjam);
         this.tanggalKembali = new SimpleObjectProperty<>(tanggalKembali);
+        this.jamMulai = new SimpleObjectProperty<>(LocalTime.of(8, 0));
+        this.jamSelesai = new SimpleObjectProperty<>(LocalTime.of(16, 0));
         this.statusPeminjaman = new SimpleStringProperty(statusPeminjaman);
         this.statusApproval = new SimpleStringProperty("approved");
         this.keteranganApproval = new SimpleStringProperty("");
@@ -55,6 +60,7 @@ public class Peminjaman {
                       String namaPeminjam, String keperluan,
                       String jenisKegiatan, String penjelasanKegiatan, String suratPath,
                       LocalDate tanggalPinjam, LocalDate tanggalKembali, 
+                      LocalTime jamMulai, LocalTime jamSelesai,
                       String statusPeminjaman, String statusApproval) {
         this.id = new SimpleIntegerProperty(id);
         this.idRuangan = new SimpleIntegerProperty(idRuangan);
@@ -66,6 +72,8 @@ public class Peminjaman {
         this.suratPath = new SimpleStringProperty(suratPath);
         this.tanggalPinjam = new SimpleObjectProperty<>(tanggalPinjam);
         this.tanggalKembali = new SimpleObjectProperty<>(tanggalKembali);
+        this.jamMulai = new SimpleObjectProperty<>(jamMulai);
+        this.jamSelesai = new SimpleObjectProperty<>(jamSelesai);
         this.statusPeminjaman = new SimpleStringProperty(statusPeminjaman);
         this.statusApproval = new SimpleStringProperty(statusApproval);
         this.keteranganApproval = new SimpleStringProperty("");
@@ -116,6 +124,14 @@ public class Peminjaman {
     public LocalDate getTanggalKembali() { return tanggalKembali.get(); }
     public void setTanggalKembali(LocalDate value) { tanggalKembali.set(value); }
     public ObjectProperty<LocalDate> tanggalKembaliProperty() { return tanggalKembali; }
+    
+    public LocalTime getJamMulai() { return jamMulai.get(); }
+    public void setJamMulai(LocalTime value) { jamMulai.set(value); }
+    public ObjectProperty<LocalTime> jamMulaiProperty() { return jamMulai; }
+    
+    public LocalTime getJamSelesai() { return jamSelesai.get(); }
+    public void setJamSelesai(LocalTime value) { jamSelesai.set(value); }
+    public ObjectProperty<LocalTime> jamSelesaiProperty() { return jamSelesai; }
     
     public String getStatusPeminjaman() { return statusPeminjaman.get(); }
     public void setStatusPeminjaman(String value) { statusPeminjaman.set(value); }

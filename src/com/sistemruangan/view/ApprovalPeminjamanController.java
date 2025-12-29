@@ -40,6 +40,7 @@ public class ApprovalPeminjamanController {
     @FXML private TableColumn<Peminjaman, String> colKeperluan;
     @FXML private TableColumn<Peminjaman, LocalDate> colTglPinjam;
     @FXML private TableColumn<Peminjaman, LocalDate> colTglKembali;
+    @FXML private TableColumn<Peminjaman, String> colJam;
     @FXML private TableColumn<Peminjaman, String> colStatus;
     @FXML private TableColumn<Peminjaman, Void> colAksi;
     
@@ -103,6 +104,16 @@ public class ApprovalPeminjamanController {
         colKeperluan.setCellValueFactory(new PropertyValueFactory<>("keperluan"));
         colTglPinjam.setCellValueFactory(new PropertyValueFactory<>("tanggalPinjam"));
         colTglKembali.setCellValueFactory(new PropertyValueFactory<>("tanggalKembali"));
+        
+        colJam.setCellValueFactory(cellData -> {
+            Peminjaman p = cellData.getValue();
+            if (p.getJamMulai() != null && p.getJamSelesai() != null) {
+                return new javafx.beans.property.SimpleStringProperty(
+                    p.getJamMulai().toString() + " - " + p.getJamSelesai().toString()
+                );
+            }
+            return new javafx.beans.property.SimpleStringProperty("-");
+        });
         
         colStatus.setCellValueFactory(cellData -> 
             new javafx.beans.property.SimpleStringProperty(
@@ -332,8 +343,8 @@ public class ApprovalPeminjamanController {
             content.getChildren().addAll(
                 createInfoRow("👤 Peminjam", peminjaman.getNamaPeminjam()),
                 createInfoRow("🏢 Ruangan", peminjaman.getNamaRuangan()),
-                createInfoRow("📅 Tanggal Pinjam", peminjaman.getTanggalPinjam().toString()),
-                createInfoRow("📅 Tanggal Kembali", peminjaman.getTanggalKembali().toString()),
+                createInfoRow("📅 Tanggal", peminjaman.getTanggalPinjam().toString() + " s/d " + peminjaman.getTanggalKembali().toString()),
+                createInfoRow("⏰ Waktu", peminjaman.getJamMulai().toString() + " - " + peminjaman.getJamSelesai().toString()),
                 createInfoRow("📋 Keperluan", peminjaman.getKeperluan()),
                 new Separator(),
                 new Label("Detail Kegiatan Non-Kuliah:") {{

@@ -12,7 +12,7 @@ public class DatabaseConnection {
     // ========== KONFIGURASI DATABASE ==========
     // Ganti nilai di bawah sesuai dengan konfigurasi MySQL Anda
     
-    private static final String URL = "jdbc:mysql://localhost:3307/sistem_ruangan";
+    private static final String URL = "jdbc:mysql://localhost:3306/sistem_ruangan";
     private static final String USER = "root";
     private static final String PASSWORD = "";
     

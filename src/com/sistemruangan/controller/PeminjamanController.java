@@ -6,7 +6,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 import java.sql.*;
-import java.time.LocalDate;
 
 /**
  * Controller untuk operasi CRUD Peminjaman - WITH APPROVAL SYSTEM
@@ -54,8 +53,8 @@ public class PeminjamanController {
             // Insert peminjaman dengan approval
             String query = "INSERT INTO peminjaman (id_ruangan, nama_peminjam, keperluan, " +
                           "jenis_kegiatan, penjelasan_kegiatan, surat_path, " +
-                          "tanggal_pinjam, tanggal_kembali, status_peminjaman, status_approval) " +
-                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                          "tanggal_pinjam, tanggal_kembali, jam_mulai, jam_selesai, status_peminjaman, status_approval) " +
+                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
             pstmt = conn.prepareStatement(query);
             pstmt.setInt(1, peminjaman.getIdRuangan());
@@ -66,8 +65,10 @@ public class PeminjamanController {
             pstmt.setString(6, peminjaman.getSuratPath());
             pstmt.setDate(7, Date.valueOf(peminjaman.getTanggalPinjam()));
             pstmt.setDate(8, Date.valueOf(peminjaman.getTanggalKembali()));
-            pstmt.setString(9, peminjaman.getStatusPeminjaman());
-            pstmt.setString(10, statusApproval);
+            pstmt.setTime(9, Time.valueOf(peminjaman.getJamMulai()));
+            pstmt.setTime(10, Time.valueOf(peminjaman.getJamSelesai()));
+            pstmt.setString(11, peminjaman.getStatusPeminjaman());
+            pstmt.setString(12, statusApproval);
             
             int rowsAffected = pstmt.executeUpdate();
             
@@ -292,6 +293,8 @@ public class PeminjamanController {
                         suratPath,
                         rs.getDate("tanggal_pinjam").toLocalDate(),
                         rs.getDate("tanggal_kembali").toLocalDate(),
+                        rs.getTime("jam_mulai").toLocalTime(),
+                        rs.getTime("jam_selesai").toLocalTime(),
                         rs.getString("status_peminjaman"),
                         statusApproval
                     );
@@ -472,6 +475,8 @@ public class PeminjamanController {
             rs.getString("surat_path"),
             rs.getDate("tanggal_pinjam").toLocalDate(),
             rs.getDate("tanggal_kembali").toLocalDate(),
+            rs.getTime("jam_mulai").toLocalTime(),
+            rs.getTime("jam_selesai").toLocalTime(),
             rs.getString("status_peminjaman"),
             rs.getString("status_approval") != null ? rs.getString("status_approval") : "approved"
         );

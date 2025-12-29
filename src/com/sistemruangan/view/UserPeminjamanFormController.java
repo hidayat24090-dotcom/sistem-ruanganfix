@@ -1,13 +1,16 @@
 package com.sistemruangan.view;
 
 import com.sistemruangan.MainApp;
+import com.sistemruangan.controller.GedungController;
 import com.sistemruangan.controller.PeminjamanController;
 import com.sistemruangan.controller.RuanganController;
+import com.sistemruangan.model.Gedung;
 import com.sistemruangan.model.Peminjaman;
 import com.sistemruangan.model.Ruangan;
 import com.sistemruangan.util.SessionManager;
 import com.sistemruangan.util.DialogUtil;
 import javafx.scene.layout.StackPane;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -30,6 +33,7 @@ import java.time.temporal.ChronoUnit;
 public class UserPeminjamanFormController {
     
     @FXML private Label lblNamaPeminjam;
+    @FXML private ComboBox<Gedung> cbGedung;
     @FXML private ComboBox<Ruangan> cbRuangan;
     @FXML private TextArea txtKeperluan;
     
@@ -43,10 +47,14 @@ public class UserPeminjamanFormController {
     
     @FXML private DatePicker dpTglPinjam;
     @FXML private DatePicker dpTglKembali;
+    @FXML private ComboBox<String> cbJamMulai;
+    @FXML private ComboBox<String> cbMenitMulai;
+    @FXML private ComboBox<String> cbJamSelesai;
+    @FXML private ComboBox<String> cbMenitSelesai;
+    
     @FXML private VBox vboxInfoRuangan;
     @FXML private Label lblKapasitas;
-    @FXML private Label lblProyektor;
-    @FXML private Label lblHdmi;
+    @FXML private VBox vboxFasilitas;
     @FXML private HBox hboxDurasi;
     @FXML private Label lblDurasi;
     @FXML private Label errorLabel;
@@ -56,6 +64,7 @@ public class UserPeminjamanFormController {
     
     private RuanganController ruanganController;
     private PeminjamanController peminjamanController;
+    private GedungController gedungController;
     private static Ruangan preSelectedRuangan = null;
     private String selectedSuratPath = null;
     private ToggleGroup jenisKegiatanGroup;
@@ -69,6 +78,7 @@ public class UserPeminjamanFormController {
             
             ruanganController = new RuanganController();
             peminjamanController = new PeminjamanController();
+            gedungController = new GedungController();
             
             // Create surat directory
             createSuratDirectory();
@@ -84,17 +94,20 @@ public class UserPeminjamanFormController {
                 lblNamaPeminjam.setText(SessionManager.getNamaLengkap());
             }
             
-            // Load ruangan
-            loadRuanganTersedia();
+            // Setup Time ComboBoxes
+            setupTimeComboBoxes();
+            
+            // Load gedungs
+            loadGedungList();
             
             // Set default dates
             dpTglPinjam.setValue(LocalDate.now());
-            dpTglKembali.setValue(LocalDate.now().plusDays(1));
+            dpTglKembali.setValue(LocalDate.now());
             
             // Pre-select ruangan if any
             if (preSelectedRuangan != null) {
-                cbRuangan.setValue(preSelectedRuangan);
-                handleRuanganChange();
+                // To support pre-selected, we'd need its gedung first
+                // For now, just let it be if not easy
                 preSelectedRuangan = null;
             }
             
@@ -184,28 +197,66 @@ public class UserPeminjamanFormController {
         }
     }
     
+    public static void setSelectedRuangan(Ruangan ruangan) {
+        preSelectedRuangan = ruangan;
+    }
+    
     /**
-     * Load ruangan tersedia
+     * Setup Time ComboBoxes with options
      */
-    private void loadRuanganTersedia() {
+    private void setupTimeComboBoxes() {
+        ObservableList<String> hours = FXCollections.observableArrayList();
+        for (int i = 0; i < 24; i++) {
+            hours.add(String.format("%02d", i));
+        }
+        
+        ObservableList<String> minutes = FXCollections.observableArrayList("00", "15", "30", "45");
+        
+        cbJamMulai.setItems(hours);
+        cbMenitMulai.setItems(minutes);
+        cbJamSelesai.setItems(hours);
+        cbMenitSelesai.setItems(minutes);
+        
+        // Defaults
+        cbJamMulai.setValue("08");
+        cbMenitMulai.setValue("00");
+        cbJamSelesai.setValue("16");
+        cbMenitSelesai.setValue("00");
+    }
+    
+    /**
+     * Load daftar gedung
+     */
+    private void loadGedungList() {
         try {
-            ObservableList<Ruangan> allRuangan = ruanganController.getAllRuangan();
-            cbRuangan.getItems().clear();
-            
-            for (Ruangan r : allRuangan) {
-                if ("tersedia".equalsIgnoreCase(r.getStatus())) {
-                    cbRuangan.getItems().add(r);
-                }
-            }
-            
+            cbGedung.setItems(gedungController.getAllGedung());
         } catch (Exception e) {
-            System.err.println("❌ ERROR loading ruangan: " + e.getMessage());
-            showError("Gagal memuat daftar ruangan: " + e.getMessage());
+            System.err.println("❌ ERROR loading gedungs: " + e.getMessage());
         }
     }
     
-    public static void setSelectedRuangan(Ruangan ruangan) {
-        preSelectedRuangan = ruangan;
+    /**
+     * Handle perubahan gedung - Filter ruangan
+     */
+    @FXML
+    private void handleGedungChange() {
+        Gedung selectedGedung = cbGedung.getValue();
+        if (selectedGedung != null) {
+            try {
+                ObservableList<Ruangan> ruanganList = ruanganController.getRuanganByGedung(selectedGedung.getId());
+                cbRuangan.setItems(ruanganList);
+                cbRuangan.setDisable(false);
+                cbRuangan.setPromptText("Pilih ruangan");
+            } catch (Exception e) {
+                System.err.println("❌ ERROR filtering ruangan: " + e.getMessage());
+            }
+        } else {
+            cbRuangan.getItems().clear();
+            cbRuangan.setDisable(true);
+            cbRuangan.setPromptText("Pilih gedung dulu");
+        }
+        vboxInfoRuangan.setVisible(false);
+        vboxInfoRuangan.setManaged(false);
     }
     
     @FXML
@@ -216,27 +267,21 @@ public class UserPeminjamanFormController {
             lblKapasitas.setText(selected.getJumlahKursi() + " orang");
             String fasilitas = selected.getFasilitas();
             
+            vboxFasilitas.getChildren().clear();
             if (fasilitas == null || fasilitas.trim().isEmpty()) {
-                lblProyektor.setText("Tidak ada fasilitas");
-                lblHdmi.setText("-");
+                vboxFasilitas.getChildren().add(new Label("- Tidak ada fasilitas tambahan"));
             } else {
-                lblProyektor.getParent().setVisible(true);
-                VBox vbox = (VBox) lblProyektor.getParent().getParent();
-                vbox.getChildren().clear();
-                
-                Label titleLabel = new Label("Fasilitas:");
-                titleLabel.setStyle("-fx-font-weight: bold;");
-                vbox.getChildren().add(titleLabel);
-                
                 String[] items = fasilitas.split(",");
                 for (String item : items) {
                     Label itemLabel = new Label("• " + item.trim());
-                    vbox.getChildren().add(itemLabel);
+                    vboxFasilitas.getChildren().add(itemLabel);
                 }
             }
             vboxInfoRuangan.setVisible(true);
+            vboxInfoRuangan.setManaged(true);
         } else {
             vboxInfoRuangan.setVisible(false);
+            vboxInfoRuangan.setManaged(false);
         }
     }
     
@@ -250,11 +295,11 @@ public class UserPeminjamanFormController {
             long days = ChronoUnit.DAYS.between(dpTglPinjam.getValue(), dpTglKembali.getValue()) + 1;
             
             if (days > 0) {
-                lblDurasi.setText("Durasi peminjaman: " + days + " hari");
+                lblDurasi.setText(String.format("Durasi: %d hari", days));
                 hboxDurasi.setVisible(true);
-                hboxDurasi.setStyle("-fx-background-color: #D4EDDA; -fx-padding: 10; -fx-background-radius: 6;");
+                hboxDurasi.setStyle("-fx-background-color: #E3F2FD; -fx-padding: 10; -fx-background-radius: 6;");
             } else {
-                lblDurasi.setText("Tanggal kembali harus setelah tanggal pinjam!");
+                lblDurasi.setText("Tanggal kembali tidak valid!");
                 hboxDurasi.setVisible(true);
                 hboxDurasi.setStyle("-fx-background-color: #F8D7DA; -fx-padding: 10; -fx-background-radius: 6;");
             }
@@ -285,6 +330,16 @@ public class UserPeminjamanFormController {
                 confirmMessage,
                 root,
                 () -> {
+                    // Get Time
+                    java.time.LocalTime jamMulai = java.time.LocalTime.of(
+                        Integer.parseInt(cbJamMulai.getValue()), 
+                        Integer.parseInt(cbMenitMulai.getValue())
+                    );
+                    java.time.LocalTime jamSelesai = java.time.LocalTime.of(
+                        Integer.parseInt(cbJamSelesai.getValue()), 
+                        Integer.parseInt(cbMenitSelesai.getValue())
+                    );
+
                     // On Confirm - Submit
                     Peminjaman peminjaman = new Peminjaman();
                     peminjaman.setIdRuangan(cbRuangan.getValue().getId());
@@ -294,6 +349,8 @@ public class UserPeminjamanFormController {
                     peminjaman.setJenisKegiatan(jenisKegiatan);
                     peminjaman.setTanggalPinjam(dpTglPinjam.getValue());
                     peminjaman.setTanggalKembali(dpTglKembali.getValue());
+                    peminjaman.setJamMulai(jamMulai);
+                    peminjaman.setJamSelesai(jamSelesai);
                     peminjaman.setStatusPeminjaman("aktif");
                     
                     if (rbNonKuliah.isSelected()) {
@@ -307,14 +364,12 @@ public class UserPeminjamanFormController {
                         DialogUtil.showDialog(
                             DialogUtil.DialogType.ERROR,
                             "Gagal",
-                            "Gagal mengajukan peminjaman! Silakan coba lagi.",
+                            "Gagal mengajukan peminjaman! Bentrok jadwal atau error sistem.",
                             root
                         );
                     }
                 },
-                () -> {
-                    System.out.println("Submission cancelled");
-                }
+                () -> System.out.println("Submission cancelled")
             );
             
         } catch (Exception e) {
@@ -375,6 +430,19 @@ public class UserPeminjamanFormController {
             showError("Tanggal kembali harus setelah tanggal pinjam!");
             return false;
         }
+
+        // Time validation if same day
+        if (dpTglPinjam.getValue().equals(dpTglKembali.getValue())) {
+            int hStart = Integer.parseInt(cbJamMulai.getValue());
+            int mStart = Integer.parseInt(cbMenitMulai.getValue());
+            int hEnd = Integer.parseInt(cbJamSelesai.getValue());
+            int mEnd = Integer.parseInt(cbMenitSelesai.getValue());
+            
+            if (hEnd < hStart || (hEnd == hStart && mEnd <= mStart)) {
+                showError("Waktu selesai harus setelah waktu mulai!");
+                return false;
+            }
+        }
         
         return true;
     }
@@ -419,15 +487,19 @@ public class UserPeminjamanFormController {
     
     @FXML
     private void handleReset() {
+        cbGedung.getSelectionModel().clearSelection();
         cbRuangan.getSelectionModel().clearSelection();
+        cbRuangan.setDisable(true);
         txtKeperluan.clear();
         rbKuliah.setSelected(true);
         txtPenjelasanKegiatan.clear();
         lblSuratName.setText("Belum ada file dipilih");
         selectedSuratPath = null;
         dpTglPinjam.setValue(LocalDate.now());
-        dpTglKembali.setValue(LocalDate.now().plusDays(1));
+        dpTglKembali.setValue(LocalDate.now());
+        setupTimeComboBoxes();
         vboxInfoRuangan.setVisible(false);
+        vboxInfoRuangan.setManaged(false);
         vboxNonKuliah.setVisible(false);
         vboxNonKuliah.setManaged(false);
         hboxDurasi.setVisible(false);

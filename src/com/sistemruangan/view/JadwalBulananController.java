@@ -59,6 +59,7 @@ public class JadwalBulananController {
         cbBulan.setValue(now.getMonth().getDisplayName(TextStyle.FULL, new Locale("id", "ID")));
         cbTahun.setValue(now.getYear());
         loadData(now.getMonthValue(), now.getYear());
+        
     }
     
     /**

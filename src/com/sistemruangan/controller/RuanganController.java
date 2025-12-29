@@ -11,6 +11,7 @@ import java.sql.*;
  * Controller untuk operasi CRUD Ruangan - WITH PHOTO SUPPORT
  */
 public class RuanganController {
+
     
     /**
      * Mengambil semua data ruangan dari database (dengan foto)
@@ -26,11 +27,13 @@ public class RuanganController {
             while (rs.next()) {
                 Ruangan ruangan = new Ruangan(
                     rs.getInt("id"),
+                    rs.getInt("id_gedung"),
                     rs.getString("nama_ruangan"),
+                    rs.getInt("lantai"),
                     rs.getInt("jumlah_kursi"),
                     rs.getString("fasilitas"),
                     rs.getString("status"),
-                    rs.getString("foto_path") // NEW: foto path
+                    rs.getString("foto_path")
                 );
                 ruanganList.add(ruangan);
             }
@@ -46,16 +49,18 @@ public class RuanganController {
      * Menambah ruangan baru ke database (dengan foto)
      */
     public boolean tambahRuangan(Ruangan ruangan) {
-        String query = "INSERT INTO ruangan (nama_ruangan, jumlah_kursi, fasilitas, status, foto_path) VALUES (?, ?, ?, ?, ?)";
+        String query = "INSERT INTO ruangan (id_gedung, nama_ruangan, lantai, jumlah_kursi, fasilitas, status, foto_path) VALUES (?, ?, ?, ?, ?, ?, ?)";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
-            pstmt.setString(1, ruangan.getNamaRuangan());
-            pstmt.setInt(2, ruangan.getJumlahKursi());
-            pstmt.setString(3, ruangan.getFasilitas());
-            pstmt.setString(4, ruangan.getStatus());
-            pstmt.setString(5, ruangan.getFotoPath());
+            pstmt.setInt(1, ruangan.getIdGedung());
+            pstmt.setString(2, ruangan.getNamaRuangan());
+            pstmt.setInt(3, ruangan.getLantai());
+            pstmt.setInt(4, ruangan.getJumlahKursi());
+            pstmt.setString(5, ruangan.getFasilitas());
+            pstmt.setString(6, ruangan.getStatus());
+            pstmt.setString(7, ruangan.getFotoPath());
             
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
@@ -71,17 +76,19 @@ public class RuanganController {
      * Mengupdate data ruangan (dengan foto)
      */
     public boolean updateRuangan(Ruangan ruangan) {
-        String query = "UPDATE ruangan SET nama_ruangan=?, jumlah_kursi=?, fasilitas=?, status=?, foto_path=? WHERE id=?";
+        String query = "UPDATE ruangan SET id_gedung=?, nama_ruangan=?, lantai=?, jumlah_kursi=?, fasilitas=?, status=?, foto_path=? WHERE id=?";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
-            pstmt.setString(1, ruangan.getNamaRuangan());
-            pstmt.setInt(2, ruangan.getJumlahKursi());
-            pstmt.setString(3, ruangan.getFasilitas());
-            pstmt.setString(4, ruangan.getStatus());
-            pstmt.setString(5, ruangan.getFotoPath());
-            pstmt.setInt(6, ruangan.getId());
+            pstmt.setInt(1, ruangan.getIdGedung());
+            pstmt.setString(2, ruangan.getNamaRuangan());
+            pstmt.setInt(3, ruangan.getLantai());
+            pstmt.setInt(4, ruangan.getJumlahKursi());
+            pstmt.setString(5, ruangan.getFasilitas());
+            pstmt.setString(6, ruangan.getStatus());
+            pstmt.setString(7, ruangan.getFotoPath());
+            pstmt.setInt(8, ruangan.getId());
             
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
@@ -172,7 +179,9 @@ public class RuanganController {
             if (rs.next()) {
                 return new Ruangan(
                     rs.getInt("id"),
+                    rs.getInt("id_gedung"),
                     rs.getString("nama_ruangan"),
+                    rs.getInt("lantai"),
                     rs.getInt("jumlah_kursi"),
                     rs.getString("fasilitas"),
                     rs.getString("status"),
@@ -203,7 +212,9 @@ public class RuanganController {
             while (rs.next()) {
                 Ruangan ruangan = new Ruangan(
                     rs.getInt("id"),
+                    rs.getInt("id_gedung"),
                     rs.getString("nama_ruangan"),
+                    rs.getInt("lantai"),
                     rs.getInt("jumlah_kursi"),
                     rs.getString("fasilitas"),
                     rs.getString("status"),
@@ -216,6 +227,39 @@ public class RuanganController {
             e.printStackTrace();
         }
         
+        return ruanganList;
+    }
+
+    public ObservableList<Ruangan> getRuanganByGedung(int idGedung) {
+        ObservableList<Ruangan> ruanganList = FXCollections.observableArrayList();
+        String query = "SELECT r.*, g.nama_gedung FROM ruangan r " +
+                      "LEFT JOIN gedung g ON r.id_gedung = g.id " +
+                      "WHERE r.id_gedung = ? AND r.status = 'tersedia' " +
+                      "ORDER BY r.nama_ruangan ASC";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            
+            pstmt.setInt(1, idGedung);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                ruanganList.add(new Ruangan(
+                    rs.getInt("id"),
+                    rs.getInt("id_gedung"),
+                    rs.getString("nama_gedung") != null ? rs.getString("nama_gedung") : "",
+                    rs.getString("nama_ruangan"),
+                    rs.getInt("lantai"),
+                    rs.getInt("jumlah_kursi"),
+                    rs.getString("fasilitas"),
+                    rs.getString("status"),
+                    rs.getString("foto_path")
+                ));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getRuanganByGedung: " + e.getMessage());
+            e.printStackTrace();
+        }
         return ruanganList;
     }
 }

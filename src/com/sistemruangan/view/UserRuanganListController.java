@@ -4,7 +4,6 @@ import com.sistemruangan.MainApp;
 import com.sistemruangan.controller.RuanganController;
 import com.sistemruangan.model.Ruangan;
 import com.sistemruangan.util.DialogUtil;
-import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Task;
@@ -35,6 +34,8 @@ public class UserRuanganListController {
     @FXML private ScrollPane scrollPane;
     @FXML private FlowPane flowPaneCards;
     @FXML private ComboBox<String> cbFilterStatus;
+    @FXML private ComboBox<com.sistemruangan.model.Gedung> cbFilterGedung;
+    @FXML private ComboBox<String> cbFilterLantai;
     @FXML private TextField txtSearch;
     @FXML private Label lblTotalRuangan;
     @FXML private Label lblTersedia;
@@ -61,6 +62,12 @@ public class UserRuanganListController {
         cbFilterStatus.getItems().addAll("Semua", "Tersedia", "Dipinjam");
         cbFilterStatus.setValue("Semua");
         
+        // Setup Building filter
+        loadGedungList();
+        cbFilterLantai.getItems().add("Semua");
+        cbFilterLantai.setValue("Semua");
+        cbFilterLantai.setDisable(true);
+        
         // Setup FlowPane for cards (optimized settings)
         flowPaneCards.setHgap(20);
         flowPaneCards.setVgap(20);
@@ -72,6 +79,38 @@ public class UserRuanganListController {
         
         // Load data in background
         loadDataAsync();
+    }
+    
+    private void loadGedungList() {
+        com.sistemruangan.controller.GedungController gedungController = new com.sistemruangan.controller.GedungController();
+        ObservableList<com.sistemruangan.model.Gedung> gedungList = gedungController.getAllGedung();
+        
+        // Add "Semua Gedung" option
+        com.sistemruangan.model.Gedung allGedung = new com.sistemruangan.model.Gedung(0, "Semua Gedung", 0);
+        cbFilterGedung.getItems().add(allGedung);
+        cbFilterGedung.getItems().addAll(gedungList);
+        cbFilterGedung.setValue(allGedung);
+    }
+    
+    @FXML
+    private void handleGedungChange() {
+        com.sistemruangan.model.Gedung selectedGedung = cbFilterGedung.getValue();
+        
+        cbFilterLantai.getItems().clear();
+        cbFilterLantai.getItems().add("Semua");
+        
+        if (selectedGedung == null || selectedGedung.getId() == 0) {
+            cbFilterLantai.setValue("Semua");
+            cbFilterLantai.setDisable(true);
+        } else {
+            for (int i = 1; i <= selectedGedung.getJumlahLantai(); i++) {
+                cbFilterLantai.getItems().add("Lantai " + i);
+            }
+            cbFilterLantai.setValue("Semua");
+            cbFilterLantai.setDisable(false);
+        }
+        
+        handleFilter();
     }
     
     /**
@@ -449,7 +488,24 @@ public class UserRuanganListController {
                 matchStatus = ruangan.getStatus().equalsIgnoreCase(selectedStatus);
             }
             
-            return matchSearch && matchStatus;
+            boolean matchGedung = true;
+            com.sistemruangan.model.Gedung selectedGedung = cbFilterGedung.getValue();
+            if (selectedGedung != null && selectedGedung.getId() != 0) {
+                matchGedung = ruangan.getIdGedung() == selectedGedung.getId();
+            }
+            
+            boolean matchLantai = true;
+            String selectedLantai = cbFilterLantai.getValue();
+            if (selectedLantai != null && !"Semua".equals(selectedLantai)) {
+                try {
+                    int lantaiNum = Integer.parseInt(selectedLantai.replace("Lantai ", ""));
+                    matchLantai = ruangan.getLantai() == lantaiNum;
+                } catch (Exception e) {
+                    System.err.println("Error parsing lantai: " + e.getMessage());
+                }
+            }
+            
+            return matchSearch && matchStatus && matchGedung && matchLantai;
         });
         
         displayCardsOptimized();
@@ -465,6 +521,15 @@ public class UserRuanganListController {
     private void handleRefresh() {
         txtSearch.clear();
         cbFilterStatus.setValue("Semua");
+        
+        com.sistemruangan.model.Gedung allGedung = cbFilterGedung.getItems().get(0);
+        cbFilterGedung.setValue(allGedung);
+        
+        cbFilterLantai.getItems().clear();
+        cbFilterLantai.getItems().add("Semua");
+        cbFilterLantai.setValue("Semua");
+        cbFilterLantai.setDisable(true);
+        
         imageCache.clear(); // Clear cache on refresh
         loadDataAsync();
     }
