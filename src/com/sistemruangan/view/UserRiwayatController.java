@@ -15,6 +15,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 /**
  * Controller untuk halaman Riwayat Peminjaman User
@@ -23,6 +24,8 @@ public class UserRiwayatController {
     
     @FXML private TableView<Peminjaman> tableRiwayat;
     @FXML private TableColumn<Peminjaman, LocalDate> colTanggalPinjam;
+    @FXML private TableColumn<Peminjaman, LocalTime> colJamMulai;
+    @FXML private TableColumn<Peminjaman, LocalTime> colJamSelesai;
     @FXML private TableColumn<Peminjaman, LocalDate> colTanggalKembali;
     @FXML private TableColumn<Peminjaman, String> colRuangan;
     @FXML private TableColumn<Peminjaman, String> colKeperluan;
@@ -47,6 +50,8 @@ public class UserRiwayatController {
         
         // Setup table columns
         colTanggalPinjam.setCellValueFactory(new PropertyValueFactory<>("tanggalPinjam"));
+        colJamMulai.setCellValueFactory(new PropertyValueFactory<>("jamMulai"));
+        colJamSelesai.setCellValueFactory(new PropertyValueFactory<>("jamSelesai"));
         colTanggalKembali.setCellValueFactory(new PropertyValueFactory<>("tanggalKembali"));
         colRuangan.setCellValueFactory(new PropertyValueFactory<>("namaRuangan"));
         colKeperluan.setCellValueFactory(new PropertyValueFactory<>("keperluan"));
@@ -227,6 +232,7 @@ public class UserRiwayatController {
         content.append("Keperluan: ").append(peminjaman.getKeperluan()).append("\n\n");
         content.append("Tanggal Pinjam: ").append(peminjaman.getTanggalPinjam()).append("\n\n");
         content.append("Tanggal Kembali: ").append(peminjaman.getTanggalKembali()).append("\n\n");
+        content.append("Jam: ").append(peminjaman.getJamMulai()).append(" - ").append(peminjaman.getJamSelesai()).append("\n\n");
         content.append("Status: ").append(peminjaman.getStatusPeminjaman().toUpperCase());
         
         DialogUtil.showDialog(

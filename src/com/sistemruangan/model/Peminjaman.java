@@ -19,8 +19,8 @@ public class Peminjaman {
     private final StringProperty suratPath; // NEW: path surat
     private final ObjectProperty<LocalDate> tanggalPinjam;
     private final ObjectProperty<LocalDate> tanggalKembali;
-    private final ObjectProperty<LocalTime> jamMulai; // NEW: jam mulai
-    private final ObjectProperty<LocalTime> jamSelesai; // NEW: jam selesai
+    private final ObjectProperty<LocalTime> jamMulai; 
+    private final ObjectProperty<LocalTime> jamSelesai; 
     private final StringProperty statusPeminjaman;
     private final StringProperty statusApproval; // NEW: pending / approved / rejected
     private final StringProperty keteranganApproval; // NEW: keterangan dari admin

@@ -82,7 +82,7 @@ public class DialogUtil {
     
     private static StackPane createOverlay() {
         StackPane overlay = new StackPane();
-        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
+        overlay.getStyleClass().add("custom-dialog-overlay");
         overlay.setAlignment(Pos.CENTER);
         
         // Click outside to close
@@ -99,35 +99,30 @@ public class DialogUtil {
     private static VBox createDialogBox(DialogType type, String title, String message, 
                                        StackPane overlay, StackPane rootContainer, Runnable callback) {
         VBox dialog = new VBox(0);
-        dialog.setMaxWidth(480);
-        dialog.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-background-radius: 15;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 30, 0, 0, 10);"
-        );
+        dialog.setMaxWidth(380);
+        dialog.setMaxHeight(Region.USE_PREF_SIZE); // Prevent vertical stretching
+        dialog.getStyleClass().add("custom-dialog-box");
         
         // Header
         HBox header = new HBox(15);
-        header.setAlignment(Pos.CENTER_LEFT);
-        header.setPadding(new Insets(25, 30, 20, 30));
-        header.setStyle("-fx-background-color: " + getHeaderColor(type) + "; -fx-background-radius: 15 15 0 0;");
+        header.getStyleClass().add("custom-dialog-header");
+        header.getStyleClass().add("header-" + type.toString().toLowerCase());
         
         Label iconLabel = new Label(getIcon(type));
-        iconLabel.setStyle("-fx-font-size: 36px;");
+        iconLabel.getStyleClass().add("custom-dialog-icon");
         
         Label titleLabel = new Label(title);
-        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 20));
-        titleLabel.setStyle("-fx-text-fill: white;");
+        titleLabel.getStyleClass().add("custom-dialog-title");
         
         header.getChildren().addAll(iconLabel, titleLabel);
         
         // Content
         VBox content = new VBox(15);
-        content.setPadding(new Insets(25, 30, 25, 30));
+        content.getStyleClass().add("custom-dialog-content");
         
         Label messageLabel = new Label(message);
         messageLabel.setWrapText(true);
-        messageLabel.setStyle("-fx-font-size: 15px; -fx-text-fill: #2c3e50; -fx-line-spacing: 3px;");
+        messageLabel.getStyleClass().add("custom-dialog-message");
         messageLabel.setMaxWidth(420);
         
         content.getChildren().add(messageLabel);
@@ -135,18 +130,14 @@ public class DialogUtil {
         // Button
         Button btnOk = new Button("OK");
         btnOk.setPrefWidth(120);
-        btnOk.setStyle(
-            "-fx-background-color: " + getHeaderColor(type) + ";" +
-            "-fx-text-fill: white;" +
-            "-fx-font-weight: bold;" +
-            "-fx-font-size: 14px;" +
-            "-fx-padding: 12 25;" +
-            "-fx-background-radius: 8;" +
-            "-fx-cursor: hand;"
-        );
+        btnOk.getStyleClass().add("primary-button"); // Reusing existing button class
+        // Add specific color class based on type if needed, or just let it be primary blue
+        if (type == DialogType.ERROR || type == DialogType.WARNING) {
+             btnOk.getStyleClass().add("logout-button"); // Use reddish/warning style if error
+        }
         
-        btnOk.setOnMouseEntered(e -> btnOk.setOpacity(0.85));
-        btnOk.setOnMouseExited(e -> btnOk.setOpacity(1.0));
+        // Custom button styling override for dialog consistency
+        btnOk.setStyle("-fx-font-size: 14px; -fx-padding: 10 25;");
         
         btnOk.setOnAction(e -> {
             if (callback != null) callback.run();
@@ -154,8 +145,7 @@ public class DialogUtil {
         });
         
         HBox buttonBox = new HBox(btnOk);
-        buttonBox.setAlignment(Pos.CENTER);
-        buttonBox.setPadding(new Insets(0, 30, 25, 30));
+        buttonBox.getStyleClass().add("custom-dialog-button-bar");
         
         dialog.getChildren().addAll(header, content, buttonBox);
         
@@ -166,35 +156,30 @@ public class DialogUtil {
                                              StackPane overlay, StackPane rootContainer,
                                              Runnable onConfirm, Runnable onCancel) {
         VBox dialog = new VBox(0);
-        dialog.setMaxWidth(500);
-        dialog.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-background-radius: 15;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 30, 0, 0, 10);"
-        );
+        dialog.setMaxWidth(400);
+        dialog.setMaxHeight(Region.USE_PREF_SIZE); // Prevent vertical stretching
+        dialog.getStyleClass().add("custom-dialog-box");
         
         // Header
         HBox header = new HBox(15);
-        header.setAlignment(Pos.CENTER_LEFT);
-        header.setPadding(new Insets(25, 30, 20, 30));
-        header.setStyle("-fx-background-color: #f39c12; -fx-background-radius: 15 15 0 0;");
+        header.getStyleClass().add("custom-dialog-header");
+        header.getStyleClass().add("header-confirmation");
         
         Label iconLabel = new Label("⚠️");
-        iconLabel.setStyle("-fx-font-size: 36px;");
+        iconLabel.getStyleClass().add("custom-dialog-icon");
         
         Label titleLabel = new Label(title);
-        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 20));
-        titleLabel.setStyle("-fx-text-fill: white;");
+        titleLabel.getStyleClass().add("custom-dialog-title");
         
         header.getChildren().addAll(iconLabel, titleLabel);
         
         // Content
         VBox content = new VBox(15);
-        content.setPadding(new Insets(25, 30, 25, 30));
+        content.getStyleClass().add("custom-dialog-content");
         
         Label messageLabel = new Label(message);
         messageLabel.setWrapText(true);
-        messageLabel.setStyle("-fx-font-size: 15px; -fx-text-fill: #2c3e50; -fx-line-spacing: 3px;");
+        messageLabel.getStyleClass().add("custom-dialog-message");
         messageLabel.setMaxWidth(440);
         
         content.getChildren().add(messageLabel);
@@ -202,32 +187,13 @@ public class DialogUtil {
         // Buttons
         Button btnConfirm = new Button("Ya, Lanjutkan");
         btnConfirm.setPrefWidth(150);
-        btnConfirm.setStyle(
-            "-fx-background-color: #2ecc71;" +
-            "-fx-text-fill: white;" +
-            "-fx-font-weight: bold;" +
-            "-fx-font-size: 14px;" +
-            "-fx-padding: 12 20;" +
-            "-fx-background-radius: 8;" +
-            "-fx-cursor: hand;"
-        );
+        btnConfirm.getStyleClass().add("success-button");
+        btnConfirm.setStyle("-fx-font-size: 14px; -fx-padding: 10 20;");
         
         Button btnCancel = new Button("Batal");
         btnCancel.setPrefWidth(120);
-        btnCancel.setStyle(
-            "-fx-background-color: #e74c3c;" +
-            "-fx-text-fill: white;" +
-            "-fx-font-weight: bold;" +
-            "-fx-font-size: 14px;" +
-            "-fx-padding: 12 20;" +
-            "-fx-background-radius: 8;" +
-            "-fx-cursor: hand;"
-        );
-        
-        btnConfirm.setOnMouseEntered(e -> btnConfirm.setOpacity(0.85));
-        btnConfirm.setOnMouseExited(e -> btnConfirm.setOpacity(1.0));
-        btnCancel.setOnMouseEntered(e -> btnCancel.setOpacity(0.85));
-        btnCancel.setOnMouseExited(e -> btnCancel.setOpacity(1.0));
+        btnCancel.getStyleClass().add("danger-button");
+        btnCancel.setStyle("-fx-font-size: 14px; -fx-padding: 10 20;");
         
         btnConfirm.setOnAction(e -> {
             if (onConfirm != null) onConfirm.run();
@@ -240,8 +206,7 @@ public class DialogUtil {
         });
         
         HBox buttonBox = new HBox(15, btnConfirm, btnCancel);
-        buttonBox.setAlignment(Pos.CENTER);
-        buttonBox.setPadding(new Insets(0, 30, 25, 30));
+        buttonBox.getStyleClass().add("custom-dialog-button-bar");
         
         dialog.getChildren().addAll(header, content, buttonBox);
         
@@ -252,107 +217,51 @@ public class DialogUtil {
                                       StackPane overlay, StackPane rootContainer,
                                       InputCallback callback) {
         VBox dialog = new VBox(0);
-        dialog.setMaxWidth(550);
-        dialog.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-background-radius: 15;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 30, 0, 0, 10);"
-        );
+        dialog.setMaxWidth(420);
+        dialog.setMaxHeight(Region.USE_PREF_SIZE); // Prevent vertical stretching
+        dialog.getStyleClass().add("custom-dialog-box");
         
         // Header
         HBox header = new HBox(15);
-        header.setAlignment(Pos.CENTER_LEFT);
-        header.setPadding(new Insets(25, 30, 20, 30));
-        header.setStyle("-fx-background-color: #5B9BD5; -fx-background-radius: 15 15 0 0;");
+        header.getStyleClass().add("custom-dialog-header");
+        header.getStyleClass().add("header-info");
         
         Label iconLabel = new Label("✏️");
-        iconLabel.setStyle("-fx-font-size: 36px;");
+        iconLabel.getStyleClass().add("custom-dialog-icon");
         
         Label titleLabel = new Label(title);
-        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 20));
-        titleLabel.setStyle("-fx-text-fill: white;");
+        titleLabel.getStyleClass().add("custom-dialog-title");
         
         header.getChildren().addAll(iconLabel, titleLabel);
         
         // Content
         VBox content = new VBox(15);
-        content.setPadding(new Insets(25, 30, 25, 30));
+        content.getStyleClass().add("custom-dialog-content");
         
         Label messageLabel = new Label(message);
         messageLabel.setWrapText(true);
-        messageLabel.setStyle("-fx-font-size: 15px; -fx-text-fill: #2c3e50; -fx-line-spacing: 3px;");
+        messageLabel.getStyleClass().add("custom-dialog-message");
         messageLabel.setMaxWidth(490);
         
         TextArea textArea = new TextArea();
         textArea.setPromptText(placeholder);
         textArea.setPrefRowCount(4);
         textArea.setWrapText(true);
-        textArea.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-border-color: #cbd5e0;" +
-            "-fx-border-width: 2;" +
-            "-fx-border-radius: 8;" +
-            "-fx-background-radius: 8;" +
-            "-fx-padding: 10;" +
-            "-fx-font-size: 14px;"
-        );
-        
-        // Focus effect
-        textArea.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
-            if (isNowFocused) {
-                textArea.setStyle(
-                    "-fx-background-color: white;" +
-                    "-fx-border-color: #5B9BD5;" +
-                    "-fx-border-width: 2;" +
-                    "-fx-border-radius: 8;" +
-                    "-fx-background-radius: 8;" +
-                    "-fx-padding: 10;" +
-                    "-fx-font-size: 14px;"
-                );
-            } else {
-                textArea.setStyle(
-                    "-fx-background-color: white;" +
-                    "-fx-border-color: #cbd5e0;" +
-                    "-fx-border-width: 2;" +
-                    "-fx-border-radius: 8;" +
-                    "-fx-background-radius: 8;" +
-                    "-fx-padding: 10;" +
-                    "-fx-font-size: 14px;"
-                );
-            }
-        });
+        textArea.getStyleClass().add("text-field"); // Use existing text-field style which looks good
+        textArea.setStyle("-fx-font-size: 14px;");
         
         content.getChildren().addAll(messageLabel, textArea);
         
         // Buttons
         Button btnSubmit = new Button("Kirim");
         btnSubmit.setPrefWidth(130);
-        btnSubmit.setStyle(
-            "-fx-background-color: #2ecc71;" +
-            "-fx-text-fill: white;" +
-            "-fx-font-weight: bold;" +
-            "-fx-font-size: 14px;" +
-            "-fx-padding: 12 20;" +
-            "-fx-background-radius: 8;" +
-            "-fx-cursor: hand;"
-        );
+        btnSubmit.getStyleClass().add("primary-button");
+        btnSubmit.setStyle("-fx-font-size: 14px; -fx-padding: 10 20;");
         
         Button btnCancel = new Button("Batal");
         btnCancel.setPrefWidth(120);
-        btnCancel.setStyle(
-            "-fx-background-color: #e8edf2;" +
-            "-fx-text-fill: #2c3e50;" +
-            "-fx-font-weight: bold;" +
-            "-fx-font-size: 14px;" +
-            "-fx-padding: 12 20;" +
-            "-fx-background-radius: 8;" +
-            "-fx-cursor: hand;"
-        );
-        
-        btnSubmit.setOnMouseEntered(e -> btnSubmit.setOpacity(0.85));
-        btnSubmit.setOnMouseExited(e -> btnSubmit.setOpacity(1.0));
-        btnCancel.setOnMouseEntered(e -> btnCancel.setOpacity(0.85));
-        btnCancel.setOnMouseExited(e -> btnCancel.setOpacity(1.0));
+        btnCancel.getStyleClass().add("secondary-button");
+        btnCancel.setStyle("-fx-font-size: 14px; -fx-padding: 10 20;");
         
         btnSubmit.setOnAction(e -> {
             String input = textArea.getText().trim();
@@ -368,8 +277,7 @@ public class DialogUtil {
         });
         
         HBox buttonBox = new HBox(15, btnSubmit, btnCancel);
-        buttonBox.setAlignment(Pos.CENTER);
-        buttonBox.setPadding(new Insets(0, 30, 25, 30));
+        buttonBox.getStyleClass().add("custom-dialog-button-bar");
         
         dialog.getChildren().addAll(header, content, buttonBox);
         
@@ -426,16 +334,7 @@ public class DialogUtil {
         }
     }
     
-    private static String getHeaderColor(DialogType type) {
-        switch (type) {
-            case SUCCESS: return "#2ecc71";
-            case ERROR: return "#e74c3c";
-            case WARNING: return "#f39c12";
-            case INFO: return "#5B9BD5";
-            case CONFIRMATION: return "#f39c12";
-            default: return "#5B9BD5";
-        }
-    }
+    // getHeaderColor no longer needed as we use CSS classes
     
     /**
      * Callback interface for input dialog

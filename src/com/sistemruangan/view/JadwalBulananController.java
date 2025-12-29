@@ -9,6 +9,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.Locale;
@@ -24,6 +25,8 @@ public class JadwalBulananController {
     @FXML private TableColumn<Peminjaman, String> colRuangan;
     @FXML private TableColumn<Peminjaman, String> colPeminjam;
     @FXML private TableColumn<Peminjaman, String> colKeperluan;
+    @FXML private TableColumn<Peminjaman, LocalTime> colJamMulai;
+    @FXML private TableColumn<Peminjaman, LocalTime> colJamSelesai;
     @FXML private TableColumn<Peminjaman, String> colStatus;
     
     @FXML private ComboBox<String> cbBulan;
@@ -46,6 +49,8 @@ public class JadwalBulananController {
         // Setup table columns
         colTanggalPinjam.setCellValueFactory(new PropertyValueFactory<>("tanggalPinjam"));
         colTanggalKembali.setCellValueFactory(new PropertyValueFactory<>("tanggalKembali"));
+        colJamMulai.setCellValueFactory(new PropertyValueFactory<>("jamMulai"));
+        colJamSelesai.setCellValueFactory(new PropertyValueFactory<>("jamSelesai"));
         colRuangan.setCellValueFactory(new PropertyValueFactory<>("namaRuangan"));
         colPeminjam.setCellValueFactory(new PropertyValueFactory<>("namaPeminjam"));
         colKeperluan.setCellValueFactory(new PropertyValueFactory<>("keperluan"));
